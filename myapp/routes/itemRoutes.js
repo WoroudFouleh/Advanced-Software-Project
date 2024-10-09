@@ -16,4 +16,8 @@ router.put('/updateItems/:id', itemController.updateItem);
 // DELETE /api/items/:id - Delete Item Listing
 router.delete('/deleteitems/:id', itemController.deleteItem);
 
+
+// GET /api/items/search - Search Items
+router.get('/items/search?', itemController.searchItems); // إضافة هذا السطر
+
 module.exports = router;
