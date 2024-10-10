@@ -11,6 +11,10 @@ const Item = sequelize.define("Item", {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    category: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     description: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -40,7 +44,7 @@ const Item = sequelize.define("Item", {
         defaultValue: "available",
     }
 }, {
-    timestamps: true,
+    timestamps: false  // تعطيل الطوابع الزمنية
 });
 
-module.exports = Item; // تأكد من أن الملف يقوم بتصدير النموذج بشكل صحيح
+module.exports = Item;

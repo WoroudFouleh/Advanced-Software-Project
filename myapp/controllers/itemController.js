@@ -3,30 +3,38 @@ const { Op } = require('sequelize'); // تأكد من استيراد Op من Seq
 
 exports.createItem = async (req, res) => {
     try {
-        const { name, description, basePricePerDay, basePricePerHour, ownerId, availabilityStartDate, availabilityEndDate } = req.body;
+        const { name, category, description, basePricePerDay, basePricePerHour, ownerId, availabilityStartDate, availabilityEndDate, status} = req.body;
 
         // تحقق من القيم المطلوبة
-        if (!name || !description || basePricePerDay === undefined || ownerId === undefined || !availabilityStartDate || !availabilityEndDate) {
+        if (!name || !category ||  !description || basePricePerDay === undefined || ownerId === undefined || !availabilityStartDate || !availabilityEndDate || !status) {
             return res.status(400).json({ error: "All fields are required." });
         }
 
         // إنشاء عنصر جديد
         const newItem = await Item.create({
             name,
+            category,
             description,
             basePricePerDay,
             basePricePerHour,
             ownerId,
             availabilityStartDate,
             availabilityEndDate,
+            status,
         });
 
         return res.status(201).json({ message: "Item created successfully!", item: newItem });
     } catch (error) {
-        console.error(error); // طباعة الخطأ في وحدة التحكم
-        return res.status(500).json({ error: "An error occurred while creating the item." });
+        console.error("Error details:", error);  // عرض تفاصيل الخطأ
+        return res.status(500).json({ error: "An error occurred while creating the item.", details: error.message });
     }
 };
+
+
+
+
+
+
 // دالة لاسترجاع جميع العناصر
 exports.getAllItems = async (req, res) => {
     try {
@@ -61,7 +69,7 @@ exports.getItemById = async (req, res) => {
 // دالة تحديث عنصر موجود
 exports.updateItem = async (req, res) => {
     const { id } = req.params; // الحصول على الـ ID من المعلمات
-    const { name, description, basePricePerDay, basePricePerHour, ownerId, availabilityStartDate, availabilityEndDate, status } = req.body; // الحصول على البيانات من جسم الطلب
+    const { name, catogary, description, basePricePerDay, basePricePerHour, ownerId, availabilityStartDate, availabilityEndDate, status } = req.body; // الحصول على البيانات من جسم الطلب
 
     try {
         // تحقق من وجود العنصر
@@ -73,6 +81,9 @@ exports.updateItem = async (req, res) => {
         // تحديث القيم فقط إذا كانت موجودة في جسم الطلب
         if (name !== undefined) {
             item.name = name;
+        }
+        if (catogary !== undefined) {
+            item.name = catogary;
         }
         if (description !== undefined) {
             item.description = description;
@@ -128,53 +139,53 @@ exports.deleteItem = async (req, res) => {
 };
 
 
-
-
-exports.searchItems = async (req, res) => {
+exports.filterItems = async (req, res) => {
     try {
-        const { name, description, basePricePerDay, basePricePerHour, ownerId, availabilityStartDate, availabilityEndDate, status } = req.query;
+        const { category, minPrice, maxPrice, status } = req.query;
 
-        const query = {}; // كائن استعلام فارغ
+        const query = {}; // Empty object to build query conditions
 
-        // تحقق من كل معلمة واستعد للاستعلام بناءً على وجودها
-        if (name) {
-            query.name = { [Op.like]: `%${name}%` }; // للبحث عن الأسماء التي تحتوي على النص
+        // Check for category filter
+        if (category) {
+            query.category = category; // Match the category directly
         }
-        if (description) {
-            query.description = { [Op.like]: `%${description}%` }; // للبحث عن الوصف
+
+        // Check for price filters
+        if (minPrice || maxPrice) {
+            query.basePricePerDay = {}; // Initialize as an object for min/max checks
+            if (minPrice) {
+                query.basePricePerDay[Op.gte] = Number(minPrice); // Greater than or equal to minPrice
+            }
+            if (maxPrice) {
+                query.basePricePerDay[Op.lte] = Number(maxPrice); // Less than or equal to maxPrice
+            }
         }
-        if (basePricePerDay) {
-            query.basePricePerDay = Number(basePricePerDay); // تحويلها إلى رقم
-        }
-        if (basePricePerHour) {
-            query.basePricePerHour = Number(basePricePerHour); // تحويلها إلى رقم
-        }
-        if (ownerId) {
-            query.ownerId = Number(ownerId); // تحويلها إلى رقم
-        }
-        if (availabilityStartDate) {
-            query.availabilityStartDate = { [Op.gte]: new Date(availabilityStartDate) }; // أكبر من أو يساوي
-        }
-        if (availabilityEndDate) {
-            query.availabilityEndDate = { [Op.lte]: new Date(availabilityEndDate) }; // أقل من أو يساوي
-        }
+
+        // Check for status filter
         if (status) {
-            query.status = status; // يمكن أن تضيف شرطًا أكثر تعقيدًا هنا إذا كان لديك قيم متعددة
+            query.status = status; // Match status directly
         }
 
-        // استعلام قاعدة البيانات
+        console.log("Query Object:", query); // Log the constructed query
+
+        // Execute the query
         const items = await Item.findAll({
-            where: query
+            where: query,
         });
 
-        // تحقق إذا كان هناك عناصر متاحة
+        console.log("Retrieved items:", items); // طباعة العناصر المسترجعة
+
+        if (!Array.isArray(items)) {
+            return res.status(500).json({ error: "The response is not an array." });
+        }
+
         if (items.length === 0) {
             return res.status(404).json({ message: "No items found matching the criteria." });
         }
 
-        return res.status(200).json(items);
+        return res.status(200).json(items); // Return the matched items
     } catch (error) {
-        console.error(error);
+        console.error(error); // Log any errors
         return res.status(500).json({ error: "An error occurred while searching for items." });
     }
 };

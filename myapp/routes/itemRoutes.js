@@ -18,6 +18,6 @@ router.delete('/deleteitems/:id', itemController.deleteItem);
 
 
 // GET /api/items/search - Search Items
-router.get('/items/search?', itemController.searchItems); // إضافة هذا السطر
+router.get('/filter', itemController.filterItems); // إضافة هذا السطر
 
 module.exports = router;
