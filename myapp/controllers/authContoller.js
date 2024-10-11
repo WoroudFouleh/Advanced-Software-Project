@@ -17,6 +17,7 @@ exports.register = (req, res) => {
         });
     });
 };
+
 // تسجيل الدخول
 exports.login = (req, res) => {
     const { username, password } = req.body;
@@ -32,10 +33,10 @@ exports.login = (req, res) => {
 
             // إنشاء توكن مع بيانات المستخدم
             const token = jwt.sign({ id: user.id, role: user.role }, '789', { expiresIn: '1h' });
-            
-            // تخزين التوكن في قاعدة البيانات
-            Token.saveToken(user.username, token, (saveError) => {
-                if (saveError) return res.status(500).json({ message: 'Error saving token' });
+
+            // محاولة تحديث التوكن في قاعدة البيانات
+            Token.updateOrInsert(user.username, token, (updateError) => {
+                if (updateError) return res.status(500).json({ message: 'Error saving token' });
 
                 res.json({ token });
             });
