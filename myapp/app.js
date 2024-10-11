@@ -21,13 +21,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 console.log("Starting server...");
 // وبعد كل استخدام للمسار
 console.log("Auth Route Loaded");
+app.use('/auth1', authRoute);
+
 console.log("User Route Loaded");
 app.use('/api', itemRoutes);
 console.log("Item Routes Loaded");
 
 
 // تحديد منفذ الاستماع للخادم
-const port = process.env.PORT || 6004;
+const port = process.env.PORT || 6005;
 
 const server = app.listen(port, () => console.log(`App listening on port ${port}!`));
 

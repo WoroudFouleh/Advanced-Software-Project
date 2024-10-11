@@ -1,23 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const itemController = require('../controllers/itemController')
+const itemController = require('../controllers/itemController');
+const checkPermissions = require('../middleware/checkPermissions');
 
-// POST /api/items - Create Item Listing
-router.post('/additems', itemController.createItem);
-// GET /api/items - Get All Items
-router.get('/Allitems', itemController.getAllItems);
+// POST /api/items - Create Item Listing (Admin و Owner فقط)
+router.post('/additems', checkPermissions, itemController.createItem);
 
-// GET /api/items/:id - Get Item by ID
-router.get('/items/:id', itemController.getItemById);
+// GET /api/items - Get All Items (جميع الأنواع)
+router.get('/Allitems', checkPermissions, itemController.getAllItems);
 
-// PUT /api/items/{id} - Update Item Listing
-router.put('/updateItems/:id', itemController.updateItem);
+// GET /api/items/:id - Get Item by ID (جميع الأنواع)
+router.get('/items/:id', checkPermissions, itemController.getItemById);
 
-// DELETE /api/items/:id - Delete Item Listing
-router.delete('/deleteitems/:id', itemController.deleteItem);
+// PUT /api/items/{id} - Update Item Listing (Admin و Owner فقط)
+router.put('/updateItems/:id', checkPermissions, itemController.updateItem);
 
+// DELETE /api/items/:id - Delete Item Listing (Admin و Owner فقط)
+router.delete('/deleteitems/:id', checkPermissions, itemController.deleteItem);
 
-// GET /api/items/search - Search Items
-router.get('/filter', itemController.filterItems); // إضافة هذا السطر
+// GET /api/items/filter - Search Items (جميع الأنواع)
+router.get('/filter', checkPermissions, itemController.filterItems);
 
 module.exports = router;
