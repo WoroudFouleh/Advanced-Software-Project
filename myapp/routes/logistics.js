@@ -3,7 +3,8 @@ const router = express.Router();
 const { 
     createLogistics,
     getLogistics,
-    getLogisticsById 
+    getLogisticsById,
+    updateLogistics 
 
 } = require('../controllers/logisticsController');
 
@@ -15,5 +16,8 @@ router.get('/', getLogistics);
 
 // Route to get logistics by ID
 router.get('/:id', getLogisticsById);
+
+// Update a logistics option
+router.put('/:id', updateLogistics);
 
 module.exports = router;

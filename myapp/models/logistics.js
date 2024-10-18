@@ -17,5 +17,12 @@ const getLogisticsById = async (id) => {
     const [rows] = await connection.query('SELECT * FROM Logistics WHERE id = ?', [id]);
     return rows[0];
 };
+// Update logistics
+const updateLogistics = async (id, data) => {
+    const { pickupLocation, deliveryAddress, deliveryOption, status } = data;
+    const [result] = await connection.query('UPDATE Logistics SET pickupLocation = ?, deliveryAddress = ?, deliveryOption = ?, status = ? WHERE id = ?', 
+        [pickupLocation, deliveryAddress, deliveryOption, status, id]);
+    return result;
+};
 // Export all the methods
-module.exports = { createLogistics, getLogistics, getLogisticsById  };
+module.exports = { createLogistics, getLogistics, getLogisticsById, updateLogistics };
