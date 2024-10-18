@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { 
     createLogistics,
-    getLogistics 
+    getLogistics,
+    getLogisticsById 
 
 } = require('../controllers/logisticsController');
 
@@ -11,5 +12,8 @@ router.post('/create', createLogistics);
 
 // Route to get all logistics options
 router.get('/', getLogistics);
+
+// Route to get logistics by ID
+router.get('/:id', getLogisticsById);
 
 module.exports = router;

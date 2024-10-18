@@ -18,3 +18,15 @@ exports.getLogistics = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while fetching logistics options' });
     }
 };
+
+exports.getLogisticsById = async (req, res) => {
+    try {
+        const logistics = await Logistics.getLogisticsById(req.params.id);
+        if (!logistics) {
+            return res.status(404).json({ error: 'Logistics not found' });
+        }
+        res.status(200).json({ logistics });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching logistics option' });
+    }
+};
