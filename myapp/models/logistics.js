@@ -7,6 +7,11 @@ const createLogistics = async (data) => {
         [userId, pickupLocation, deliveryAddress, deliveryOption]);
     return rows;
 };
+// Get all logistics options
+const getLogistics = async () => {
+    const [rows] = await connection.query('SELECT * FROM Logistics');
+    return rows;
+};
 
 // Export all the methods
-module.exports = { createLogistics };
+module.exports = { createLogistics, getLogistics };

@@ -9,3 +9,12 @@ exports.createLogistics = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while creating logistics option' });
     }
 };
+
+exports.getLogistics = async (req, res) => {
+    try {
+        const logistics = await Logistics.getLogistics();
+        res.status(200).json({ logistics });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching logistics options' });
+    }
+};
