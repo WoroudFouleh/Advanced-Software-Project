@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "start",
+			"path": "advanced software project/myapp",
+			"problemMatcher": [],
+			"label": "npm: start - advanced software project/myapp",
+			"detail": "node ./bin/www"
+		}
+	]
+}
