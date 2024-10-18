@@ -33,10 +33,34 @@ exports.getLogisticsById = async (req, res) => {
 
 exports.updateLogistics = async (req, res) => {
     try {
-        const logistics = await Logistics.updateLogistics(req.params.id, req.body);
-        res.status(200).json({ message: 'Logistics updated', logistics });
+        // Get the existing logistics entry by ID
+        const logistics = await Logistics.getLogisticsById(req.params.id);
+        if (!logistics) {
+            return res.status(404).json({ error: 'Logistics not found' });
+        }
+
+        const { pickupLocation, deliveryAddress, deliveryOption, status } = req.body;
+
+        // Use the model's update function to update the logistics entry
+        const result = await Logistics.updateLogistics(req.params.id, {
+            pickupLocation: pickupLocation || logistics.pickupLocation,
+            deliveryAddress: deliveryAddress || logistics.deliveryAddress,
+            deliveryOption: deliveryOption || logistics.deliveryOption,
+            status: status || logistics.status
+        });
+
+        res.status(200).json({ message: 'Logistics updated', result });
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while updating logistics' });
     }
 };
 
+
+exports.deleteLogistics = async (req, res) => {
+    try {
+        await Logistics.deleteLogistics(req.params.id);
+        res.status(200).json({ message: 'Logistics deleted' });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while deleting logistics' });
+    }
+};

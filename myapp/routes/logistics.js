@@ -4,7 +4,8 @@ const {
     createLogistics,
     getLogistics,
     getLogisticsById,
-    updateLogistics 
+    updateLogistics,
+    deleteLogistics 
 
 } = require('../controllers/logisticsController');
 
@@ -19,5 +20,8 @@ router.get('/:id', getLogisticsById);
 
 // Update a logistics option
 router.put('/:id', updateLogistics);
+
+// Delete a logistics option
+router.delete('/:id', deleteLogistics);
 
 module.exports = router;
