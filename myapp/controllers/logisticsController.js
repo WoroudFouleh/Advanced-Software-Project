@@ -1,0 +1,11 @@
+const Logistics = require('../models/Logistics');
+
+exports.createLogistics = async (req, res) => {
+    try {
+        const { userId, pickupLocation, deliveryAddress, deliveryOption } = req.body;
+        const logistics = await Logistics.createLogistics({ userId, pickupLocation, deliveryAddress, deliveryOption });
+        res.status(201).json({ message: 'Logistics option created', logistics });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while creating logistics option' });
+    }
+};
