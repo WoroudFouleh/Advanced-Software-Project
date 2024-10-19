@@ -15,7 +15,7 @@ router.get('/users/search', checkPermissions, userController.searchUser); // ا�
 router.get('/profile', checkPermissions, userController.getOwnProfile); // إضافة الميدل وير
 
 router.put('/profile', checkPermissions,userController.updateOwnProfile); // تعديل الملف الشخصي للمستخدم
-/*
-router.delete('/profile', userController.deleteOwnAccount); // حذف حساب المستخدم
-*/
+
+router.delete('/profile', checkPermissions, userController.deleteOwnAccount); // حذف حساب المستخدم
+
 module.exports = router;

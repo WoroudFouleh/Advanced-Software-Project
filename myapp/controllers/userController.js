@@ -123,7 +123,7 @@ exports.updateOwnProfile = (req, res) => {
     });
 };
 
-/*
+
 
 exports.deleteOwnAccount = (req, res) => {
     const userId = req.user.id; // معرف المستخدم من التوكن
@@ -133,4 +133,3 @@ exports.deleteOwnAccount = (req, res) => {
         res.json({ message: 'Account deleted successfully' });
     });
 };
-*/
