@@ -17,7 +17,7 @@ exports.deleteUser = (req, res) => {
         res.json({ message: 'User deleted successfully' });
     });
 };
-/*exports.addUser = (req, res) => {
+exports.addUser = (req, res) => {
     const { username, password, role } = req.body;
 
     bcrypt.hash(password, 10, (err, hashedPassword) => {
@@ -29,7 +29,7 @@ exports.deleteUser = (req, res) => {
         });
     });
 };
-
+/*
 exports.updateUser = (req, res) => {
     const userId = req.params.id;
     const { username, password } = req.body;
