@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const connection = require('./db'); // الاتصال بقاعدة البيانات من ملف db.js
 const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
-const userRoute = require('./routes/user'); // مسار المستخدمين
+const userRoute = require('./routes/userRoutes'); // مسار المستخدمين
 const itemRoutes = require('./routes/itemRoutes'); // This should be the correct relative path
 
 const app = express();
@@ -25,6 +25,8 @@ app.use('/auth1', authRoute);
 
 console.log("User Route Loaded");
 app.use('/api', itemRoutes);
+app.use('/api2', userRoutes); // ربط المسارات
+
 console.log("Item Routes Loaded");
 
 
