@@ -24,14 +24,15 @@ const User = {
     },
     
     findAll: (callback) => {
-        const query = 'SELECT username, role FROM users';
+        const query = 'SELECT id, username, role FROM users';
         db.query(query, callback);
-    }
-    /*
+    },
     deleteById: (userId, callback) => {
         const query = 'DELETE FROM users WHERE id = ?';
         db.query(query, [userId], callback);
-    },
+    }
+    /*
+    
     updateById: (userId, username, password, callback) => {
         const query = 'UPDATE users SET username = ?, password = ? WHERE id = ?';
         db.query(query, [username, password, userId], callback);

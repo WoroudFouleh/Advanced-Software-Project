@@ -9,6 +9,14 @@ exports.getAllUsers = (req, res) => {
     });
 };
 
+exports.deleteUser = (req, res) => {
+    const userId = req.params.id;
+
+    User.deleteById(userId, (error) => {
+        if (error) return res.status(500).json({ message: 'Error deleting user' });
+        res.json({ message: 'User deleted successfully' });
+    });
+};
 /*exports.addUser = (req, res) => {
     const { username, password, role } = req.body;
 
@@ -37,14 +45,7 @@ exports.updateUser = (req, res) => {
     });
 };
 
-exports.deleteUser = (req, res) => {
-    const userId = req.params.id;
 
-    User.deleteById(userId, (error) => {
-        if (error) return res.status(500).json({ message: 'Error deleting user' });
-        res.json({ message: 'User deleted successfully' });
-    });
-};
 
 exports.searchUser = (req, res) => {
     const { searchTerm } = req.query; // الاسم أو الدور
