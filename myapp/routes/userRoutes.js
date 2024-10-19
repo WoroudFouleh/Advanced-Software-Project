@@ -5,7 +5,7 @@ const checkPermissions = require('../middleware/checkPermissions');
 const userController = require('../controllers/userController');
 
 // المسارات المخصصة للأدمن
-router.get('/users', usersPermissions, userController.getAllUsers); // عرض كل المستخدمين
+router.get('/users', checkPermissions, userController.getAllUsers); // عرض كل المستخدمين
 /*
 router.post('/users', checkPermissions, userController.addUser); // إضافة مستخدم
 router.put('/users/:id', checkPermissions, userController.updateUser); // تعديل مستخدم

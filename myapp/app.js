@@ -5,6 +5,7 @@ const connection = require('./db'); // الاتصال بقاعدة البيان�
 const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
 const userRoute = require('./routes/userRoutes'); // مسار المستخدمين
 const itemRoutes = require('./routes/itemRoutes'); // This should be the correct relative path
+const userRoutes = require('./routes/userRoutes'); // This should be the correct relative path
 
 const app = express();
 app.use(express.json());
