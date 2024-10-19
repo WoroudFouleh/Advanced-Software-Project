@@ -73,17 +73,24 @@ exports.searchUser = (req, res) => {
         res.json(results);
     });
 };
-/*
 
 exports.getOwnProfile = (req, res) => {
+
+    if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     const userId = req.user.id; // معرف المستخدم من التوكن
 
     User.findById(userId, (error, results) => {
-        if (error || results.length === 0) return res.status(404).json({ message: 'User not found' });
-        res.json(results[0]); // عرض معلومات المستخدم
+        if (error || results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(results[0]);
     });
 };
 
+/*
 exports.updateOwnProfile = (req, res) => {
     const userId = req.user.id; // معرف المستخدم من التوكن
     const { username, password } = req.body;

@@ -23,20 +23,24 @@ exports.login = (req, res) => {
     const { username, password } = req.body;
 
     User.findByUsername(username, (error, results) => {
-        if (error || results.length === 0) return res.status(401).json({ message: 'Invalid username or password' });
+        if (error || results.length === 0) {
+            return res.status(401).json({ message: 'Invalid username or password' });
+        }
 
         const user = results[0];
 
         // التحقق من كلمة المرور
         bcrypt.compare(password, user.password, (err, match) => {
-            if (err || !match) return res.status(401).json({ message: 'Invalid username or password' });
+            if (err || !match) {
+                return res.status(401).json({ message: 'Invalid username or password' });
+            }
 
-            // إنشاء توكن مع بيانات المستخدم
             const token = jwt.sign({ id: user.id, role: user.role }, '789', { expiresIn: '1h' });
 
-            // محاولة تحديث التوكن في قاعدة البيانات
             Token.updateOrInsert(user.username, token, (updateError) => {
-                if (updateError) return res.status(500).json({ message: 'Error saving token' });
+                if (updateError) {
+                    return res.status(500).json({ message: 'Error saving token' });
+                }
 
                 res.json({ token });
             });
