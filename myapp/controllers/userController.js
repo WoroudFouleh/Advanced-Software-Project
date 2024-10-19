@@ -90,21 +90,40 @@ exports.getOwnProfile = (req, res) => {
     });
 };
 
-/*
+
 exports.updateOwnProfile = (req, res) => {
     const userId = req.user.id; // معرف المستخدم من التوكن
-    const { username, password } = req.body;
+    const { username, password, role } = req.body; // احصل على الحقول من الطلب
 
-    let hashedPassword = password;
+    // إعداد كائن لتخزين التحديثات
+    const updates = {};
+
+    // تحقق من وجود username في الطلب وأضفه إلى updates
+    if (username) {
+        updates.username = username;
+    }
+    
+    // تحقق من وجود password في الطلب وقم بتشفيره
     if (password) {
-        hashedPassword = bcrypt.hashSync(password, 10); // تشفير كلمة المرور إذا تم تعديلها
+        updates.password = bcrypt.hashSync(password, 10);
     }
 
-    User.updateById(userId, username, hashedPassword, (error) => {
-        if (error) return res.status(500).json({ message: 'Error updating user' });
+    // تحقق من وجود role في الطلب وأضفه إلى updates
+    if (role) {
+        updates.role = role; // السماح بتحديث الدور
+    }
+
+    // تحديث المستخدم في قاعدة البيانات
+    User.update2(userId, updates, (error) => {
+        if (error) {
+            console.error('Error updating user:', error); // طباعة الخطأ في التيرمنال
+            return res.status(500).json({ message: 'Error updating user' });
+        }
         res.json({ message: 'User updated successfully' });
     });
 };
+
+/*
 
 exports.deleteOwnAccount = (req, res) => {
     const userId = req.user.id; // معرف المستخدم من التوكن

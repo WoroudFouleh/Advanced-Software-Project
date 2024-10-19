@@ -36,7 +36,29 @@ const User = {
         db.query(query, values, callback);
     },
     
+    update2: (userId, updates, callback) => {
+        // إعداد استعلام SQL مع استخدام COALESCE للحفاظ على القيم القديمة إذا لم يتم تقديم قيمة جديدة
+        const query = `
+            UPDATE users 
+            SET 
+                username = COALESCE(?, username), 
+                password = COALESCE(?, password), 
+                role = COALESCE(?, role) 
+            WHERE id = ?
+        `;
     
+        const values = [updates.username || null, updates.password || null, updates.role || null, userId];
+    
+        // تنفيذ الاستعلام
+        db.query(query, values, (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error); // طباعة الخطأ في التيرمنال
+                return callback(error);
+            }
+            callback(null, results);
+        });
+    },
+
     
     findByRoleOrUsername: (searchTerm, callback) => {
         const query = 'SELECT * FROM users WHERE role = ? OR username = ?';
@@ -45,7 +67,29 @@ const User = {
     findById: (userId, callback) => {
         const query = 'SELECT * FROM users WHERE id = ?';
         db.query(query, [userId], callback);
-    }
+        exports.update = (userId, updates, callback) => {
+            // إعداد استعلام SQL مع استخدام COALESCE للحفاظ على القيم القديمة إذا لم يتم تقديم قيمة جديدة
+            const query = `
+                UPDATE users 
+                SET 
+                    username = COALESCE(?, username), 
+                    password = COALESCE(?, password), 
+                    role = COALESCE(?, role) 
+                WHERE id = ?
+            `;
+        
+            const values = [updates.username, updates.password, updates.role, userId];
+        
+            // تنفيذ الاستعلام
+            db.query(query, values, (error, results) => {
+                if (error) {
+                    console.error('Error executing query:', error); // طباعة الخطأ في التيرمنال
+                    return callback(error);
+                }
+                callback(null, results);
+            });
+        };    }
 };
+
 
 module.exports = User;
