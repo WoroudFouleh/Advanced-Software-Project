@@ -29,23 +29,41 @@ exports.addUser = (req, res) => {
         });
     });
 };
-/*
+
 exports.updateUser = (req, res) => {
     const userId = req.params.id;
     const { username, password } = req.body;
 
-    let hashedPassword = password;
-    if (password) {
-        hashedPassword = bcrypt.hashSync(password, 10); // تشفير كلمة المرور إذا تم تعديلها
+    // قم بإنشاء مصفوفة لحفظ القيم التي سيتم تحديثها
+    const fields = [];
+    const values = [];
+
+    if (username) {
+        fields.push('username = ?');
+        values.push(username);
     }
 
-    User.updateById(userId, username, hashedPassword, (error) => {
+    if (password) {
+        const hashedPassword = bcrypt.hashSync(password, 10); // تشفير كلمة المرور إذا تم تعديلها
+        fields.push('password = ?');
+        values.push(hashedPassword);
+    }
+
+    if (fields.length === 0) {
+        return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+    values.push(userId); // أضف الـ userId كآخر قيمة
+
+    User.update(query, values, (error) => {
         if (error) return res.status(500).json({ message: 'Error updating user' });
         res.json({ message: 'User updated successfully' });
     });
 };
 
 
+/*
 
 exports.searchUser = (req, res) => {
     const { searchTerm } = req.query; // الاسم أو الدور

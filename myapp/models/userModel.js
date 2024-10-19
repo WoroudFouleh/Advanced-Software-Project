@@ -30,13 +30,14 @@ const User = {
     deleteById: (userId, callback) => {
         const query = 'DELETE FROM users WHERE id = ?';
         db.query(query, [userId], callback);
-    }
-    /*
-    
-    updateById: (userId, username, password, callback) => {
-        const query = 'UPDATE users SET username = ?, password = ? WHERE id = ?';
-        db.query(query, [username, password, userId], callback);
     },
+    
+    update: (query, values, callback) => {
+        db.query(query, values, callback);
+    }
+    
+    
+    /*
     findByRoleOrUsername: (searchTerm, callback) => {
         const query = 'SELECT * FROM users WHERE role = ? OR username = ?';
         db.query(query, [searchTerm, searchTerm], callback);
