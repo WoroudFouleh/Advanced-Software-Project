@@ -1,23 +1,53 @@
-// middleware/checkPermissions.js
+// middleware/usersPermissions.js
 const jwt = require('jsonwebtoken');
 
+// تعريف checkPermissions
 const checkPermissions = (req, res, next) => {
-    // استخراج التوكن مباشرة من الهيدر
     const token = req.headers['authorization'];
     if (!token) return res.status(403).send("Access denied.");
 
-    jwt.verify(token,'789', (err, user) => {
+    jwt.verify(token, '789', (err, user) => {
         if (err) return res.status(403).send("Invalid token.");
-        
-        req.user = user; // حفظ معلومات المستخدم في req
+
+        req.user = user;
 
         // تحقق من صلاحيات المستخدم
-        if (user.role === 'admin' || user.role === 'owner') {
-            // إذا كان المستخدم Admin أو Owner، يسمح له باستخدام جميع الصلاحيات
+        if (user.role === 'admin') {
+            // إذا كان المستخدم Admin، يسمح له بجميع العمليات
             next();
+        } else if (user.role === 'owner') {
+            // صلاحيات الـ owner
+            if (req.path === '/users') {
+                // منع الأونر من الوصول إلى /users
+                return res.status(403).send("You do not have permission to view users.");
+            }
+            // باقي صلاحيات الـ owner
+            if (req.method === 'GET' && req.path.startsWith('/items')) {
+                next();
+            } else if (req.method === 'POST' && req.path === '/items') {
+                next();
+            } else if (req.method === 'PUT' && req.path.startsWith('/items/')) {
+                next();
+            } else if (req.method === 'DELETE' && req.path.startsWith('/items/')) {
+                next();
+            } else if (req.method === 'GET' && req.path === '/profile') {
+                next();
+            } else if (req.method === 'PUT' && req.path === '/profile') {
+                next();
+            } else if (req.method === 'DELETE' && req.path === '/profile') {
+                next();
+            } else {
+                return res.status(403).send("You do not have permission to perform this action.");
+            }
         } else if (user.role === 'user') {
-            // إذا كان المستخدم فقط User، يسمح له بعرض العناصر وتصفية
+            // صلاحيات الـ user
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
+                next();
+            } else if (req.method === 'GET' && req.path === '/profile') {
+                next();
+            } else if (req.method === 'PUT' && req.path === '/profile') {
+                next();
+            } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
             } else {
                 return res.status(403).send("You do not have permission to perform this action.");
