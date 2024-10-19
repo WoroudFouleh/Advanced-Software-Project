@@ -10,72 +10,49 @@ const connection = mysql.createPool({
 
 async function syncDatabase() {
     try {
-        await connection.query('CREATE TABLE IF NOT EXISTS Logistics (id INT AUTO_INCREMENT PRIMARY KEY, userId INT NOT NULL, pickupLocation VARCHAR(255), deliveryAddress VARCHAR(255), deliveryOption ENUM("pickup", "delivery") NOT NULL, status ENUM("pending", "completed") DEFAULT "pending")');
+        // Create Logistics table
+        await connection.query(`CREATE TABLE IF NOT EXISTS Logistics (
+            id INT AUTO_INCREMENT PRIMARY KEY, 
+            userId INT NOT NULL, 
+            pickupLocation VARCHAR(255), 
+            deliveryAddress VARCHAR(255), 
+            deliveryOption ENUM('pickup', 'delivery') NOT NULL, 
+            status ENUM('pending', 'completed') DEFAULT 'pending'
+        )`);
+
+        // Create Items table
+        await connection.query(`CREATE TABLE IF NOT EXISTS items (
+            id INT AUTO_INCREMENT PRIMARY KEY, 
+            name VARCHAR(255) NOT NULL, 
+            category VARCHAR(255) NOT NULL, 
+            description TEXT, 
+            basePricePerDay DECIMAL(10, 2) NOT NULL, 
+            basePricePerHour DECIMAL(10, 2) DEFAULT 0.0, 
+            username VARCHAR(255) NOT NULL, 
+            status VARCHAR(255) NOT NULL
+        )`);
+
+        // Create Tokens table
+        await connection.query(`CREATE TABLE IF NOT EXISTS tokens (
+            id INT AUTO_INCREMENT PRIMARY KEY, 
+            username VARCHAR(255) NOT NULL, 
+            token VARCHAR(255) NOT NULL
+        )`);
+
+        // Create Users table
+        await connection.query(`CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY, 
+            username VARCHAR(255) NOT NULL, 
+            password VARCHAR(255) NOT NULL, 
+            role ENUM('user', 'admin', 'owner', 'delivery') NOT NULL
+        )`);
+
         console.log('Database and tables created/updated!');
     } catch (error) {
         console.error('Error syncing database:', error);
     }
 }
 
-syncDatabase();
+syncDatabase(); // Call the function to sync the database
 
 module.exports = connection;
-
-
-/*const mysql = require('mysql2');
-
-const connection = mysql.createConnection({
-    host: 'localhost', 
-    user: 'root', 
-    password: '123456789', 
-    database: 'test' 
-});
-
-
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to the database:', err.stack);
-        return;
-    }
-    console.log('Connected to the database as id ' + connection.threadId);
-});
-
-module.exports = connection;
-
-
-
-
-
-
-/*const mysql = require('mysql2');
-
-const connection = mysql.createConnection({
-    host: 'localhost', // أو اسم المضيف إذا كان مختلفًا
-    user: 'root', // اسم المستخدم الخاص بقاعدة البيانات
-    password: '123456789', // كلمة مرور قاعدة البيانات
-    database: 'test' // اسم قاعدة البيانات التي أنشأتها
-});
-
-connection.connect((err) => {
-    if (err) {
-        console.error('Error connecting to the database:', err.stack);
-        return;
-    }
-    console.log('Connected to the database as id ' + connection.threadId);
-});
-connection.query('SELECT * FROM customer', (err, results) => {
-    if (err) {
-        console.error('Error fetching data:', err);
-        return;
-    }
-    console.log('Data fetched from the database:', results);
-});
-connection.end((err) => {
-    if (err) {
-        console.error('Error closing the connection:', err);
-        return;
-    }
-    console.log('Connection closed.');
-});
-
-*/

@@ -1,4 +1,6 @@
-const Logistics = require('../models/Logistics');
+const Logistics = require('../models/LogisticsTemp');
+const axios = require('axios');
+require('dotenv').config();
 
 exports.createLogistics = async (req, res) => {
     try {
@@ -64,3 +66,50 @@ exports.deleteLogistics = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while deleting logistics' });
     }
 };
+
+exports.getNearbyLocations = async (req, res) => {
+    const { latitude, longitude } = req.query;
+    try {
+        const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
+            params: {
+                location: `${latitude},${longitude}`,
+                radius: 5000,
+                key: process.env.GOOGLE_MAPS_API_KEY
+            }
+        });
+        res.status(200).json({ locations: response.data.results });
+    } catch (error) {
+        console.error('Error fetching nearby locations:', error);
+        res.status(500).json({ error: 'Error fetching nearby locations' });
+    }
+};
+exports.getLogisticsByUser = async (req, res) => {
+    try {
+        const { userId } = req.params; // جلب userId من الـ params
+        const logistics = await Logistics.getLogisticsByUser(userId);
+        if (logistics.length === 0) {
+            return res.status(404).json({ error: 'No logistics found for this user' });
+        }
+        res.status(200).json({ logistics });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching logistics for the user' });
+    }
+};
+
+// جلب جميع خيارات اللوجستيات حسب الحالة
+exports.getLogisticsByStatus = async (req, res) => {
+    try {
+        const { status } = req.params; // جلب status من الـ params
+        const logistics = await Logistics.getLogisticsByStatus(status);
+        if (logistics.length === 0) {
+            return res.status(404).json({ error: 'No logistics found with this status' });
+        }
+        res.status(200).json({ logistics });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while fetching logistics by status' });
+    }
+};
+
+
+
+

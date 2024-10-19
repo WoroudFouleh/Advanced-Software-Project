@@ -52,5 +52,21 @@ const deleteLogistics = async (id) => {
     const [result] = await connection.query('DELETE FROM Logistics WHERE id = ?', [id]);
     return result;
 };
+
+// جلب جميع خيارات اللوجستيات الخاصة بمستخدم معين
+const getLogisticsByUser = async (userId) => {
+    const query = 'SELECT * FROM Logistics WHERE userId = ?';
+    const [rows] = await connection.query(query, [userId]);
+    return rows;
+};
+
+// جلب جميع خيارات اللوجستيات حسب الحالة
+const getLogisticsByStatus = async (status) => {
+    const query = 'SELECT * FROM Logistics WHERE status = ?';
+    const [rows] = await connection.query(query, [status]);
+    return rows;
+};
+
 // Export all the methods
-module.exports = { createLogistics, getLogistics, getLogisticsById, updateLogistics, deleteLogistics };
+module.exports = { createLogistics, getLogistics, getLogisticsById, updateLogistics, deleteLogistics, getLogisticsByUser,
+    getLogisticsByStatus  };
