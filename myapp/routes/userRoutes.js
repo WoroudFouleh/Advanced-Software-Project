@@ -9,9 +9,8 @@ router.get('/users', checkPermissions, userController.getAllUsers); // عرض ك
 router.delete('/users/:id', checkPermissions, userController.deleteUser); // حذف مستخدم
 router.post('/users', checkPermissions, userController.addUser); // إضافة مستخدم
 router.put('/users/:id', checkPermissions, userController.updateUser); // تعديل مستخدم
-/*
 router.get('/users/search', checkPermissions, userController.searchUser); // البحث عن مستخدم
-
+/*
 // المسارات المخصصة للمستخدمين العاديين
 router.get('/profile', userController.getOwnProfile); // عرض الملف الشخصي للمستخدم
 router.put('/profile', userController.updateOwnProfile); // تعديل الملف الشخصي للمستخدم

@@ -34,10 +34,10 @@ const User = {
     
     update: (query, values, callback) => {
         db.query(query, values, callback);
-    }
+    },
     
     
-    /*
+    
     findByRoleOrUsername: (searchTerm, callback) => {
         const query = 'SELECT * FROM users WHERE role = ? OR username = ?';
         db.query(query, [searchTerm, searchTerm], callback);
@@ -45,7 +45,7 @@ const User = {
     findById: (userId, callback) => {
         const query = 'SELECT * FROM users WHERE id = ?';
         db.query(query, [userId], callback);
-    }*/
+    }
 };
 
 module.exports = User;

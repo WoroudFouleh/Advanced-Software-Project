@@ -63,7 +63,7 @@ exports.updateUser = (req, res) => {
 };
 
 
-/*
+
 
 exports.searchUser = (req, res) => {
     const { searchTerm } = req.query; // الاسم أو الدور
@@ -73,6 +73,7 @@ exports.searchUser = (req, res) => {
         res.json(results);
     });
 };
+/*
 
 exports.getOwnProfile = (req, res) => {
     const userId = req.user.id; // معرف المستخدم من التوكن
