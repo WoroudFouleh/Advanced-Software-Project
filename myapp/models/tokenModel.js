@@ -26,3 +26,21 @@ exports.updateOrInsert = (username, token, callback) => {
         }
     );
 };
+
+// دالة للبحث عن توكن باستخدامه
+exports.findByToken = (token, callback) => {
+    const query = 'SELECT * FROM tokens WHERE token = ?';
+    connection.execute(query, [token], (error, results) => {
+        if (error) return callback(error);
+        callback(null, results);
+    });
+};
+
+// دالة لحذف توكن بعد استخدامه
+exports.deleteByToken = (token, callback) => {
+    const query = 'DELETE FROM tokens WHERE token = ?';
+    connection.execute(query, [token], (error, results) => {
+        if (error) return callback(error);
+        callback(null, results);
+    });
+};

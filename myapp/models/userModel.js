@@ -14,9 +14,9 @@ db.connect(err => {
 });
 
 const User = {
-    create: (username, password, role, callback) => {
-        const query = 'INSERT INTO users (username, password, role) VALUES (?, ?, ?)';
-        db.query(query, [username, password, role], callback);
+    create: (username, password, email, role, callback) => {
+        const query = 'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)';
+        db.query(query, [username, password, email, role], callback);
     },
     findByUsername: (username, callback) => {
         const query = 'SELECT * FROM users WHERE username = ?';
@@ -57,6 +57,15 @@ const User = {
             }
             callback(null, results);
         });
+    },
+
+    findByEmail: (email, callback) => {
+        const query = 'SELECT * FROM users WHERE email = ?';
+        db.query(query, [email], callback);
+    },
+    updatePassword: (username, hashedPassword, callback) => {
+        const query = 'UPDATE users SET password = ? WHERE username = ?';
+        db.query(query, [hashedPassword, username], callback);
     },
 
     
