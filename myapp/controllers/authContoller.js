@@ -70,9 +70,9 @@ exports.requestPasswordReset = (req, res) => {
 
             const mailOptions = {
                 from: 's12027619@stu.najah.edu',
-                to: user.email, // افترض أن لديك البريد الإلكتروني في نموذج المستخدم
+                to: user.email,
                 subject: 'Password Reset',
-                text: `Your token to reset your password: ${token}` // تغيير الرسالة لتكون بالشكل المطلوب
+                html: `Click <a href="http://your-app.com/reset-password/${token}">here</a> to reset your password. Your token is: <strong>${token}</strong>` // استخدام HTML للتنسيق
             };
 
             transporter.sendMail(mailOptions, (err) => {
