@@ -11,6 +11,7 @@ const checkPermissions = (req, res, next) => {
 
         req.user = user;
 
+       
         // تحقق من صلاحيات المستخدم
         if (user.role === 'admin') {
             // إذا كان المستخدم Admin، يسمح له بجميع العمليات
@@ -22,13 +23,13 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You do not have permission to view users.");
             }
             // باقي صلاحيات الـ owner
-            if (req.method === 'GET' && req.path.startsWith('/items')) {
+            if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
-            } else if (req.method === 'POST' && req.path === '/items') {
+            } else if (req.method === 'POST' && req.path === '/additems') {
                 next();
-            } else if (req.method === 'PUT' && req.path.startsWith('/items/')) {
+            } else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
-            } else if (req.method === 'DELETE' && req.path.startsWith('/items/')) {
+            } else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {
                 next();

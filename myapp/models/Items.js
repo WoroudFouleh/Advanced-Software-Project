@@ -10,11 +10,11 @@ const connection = mysql.createConnection({
 
 exports.createItem = (itemData, callback) => {
     const { name, category, description, basePricePerDay, basePricePerHour, username, status } = itemData;
-
     // تحقق من القيم المطلوبة
     if (!name || !category || !description || basePricePerDay === undefined || !username || !status) {
-        return callback(new Error("All fields are required."));
-    }
+      return callback(new Error("All fields are required."));
+  }
+  
 
     // تنفيذ الاستعلام
     const query = `

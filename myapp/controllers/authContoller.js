@@ -20,7 +20,6 @@ exports.register = (req, res) => {
         });
     });
 };
-// تسجيل الدخول
 exports.login = (req, res) => {
     const { username, password } = req.body;
 
@@ -37,8 +36,14 @@ exports.login = (req, res) => {
                 return res.status(401).json({ message: 'Invalid username or password' });
             }
 
-            const token = jwt.sign({ id: user.id, role: user.role }, '789', { expiresIn: '1h' });
+            // تعديل الـ token لتضمين username
+            const token = jwt.sign(
+                { id: user.id, username: user.username, role: user.role }, // تضمين username هنا
+                '789',
+                { expiresIn: '1h' }
+            );
 
+            // تحديث أو إدخال التوكن في قاعدة البيانات
             Token.updateOrInsert(user.username, token, (updateError) => {
                 if (updateError) {
                     return res.status(500).json({ message: 'Error saving token' });
@@ -49,7 +54,6 @@ exports.login = (req, res) => {
         });
     });
 };
-
 // طلب إعادة تعيين كلمة المرور
 exports.requestPasswordReset = (req, res) => {
     const { username } = req.body; // استخدام اسم المستخدم بدلاً من البريد الإلكتروني
