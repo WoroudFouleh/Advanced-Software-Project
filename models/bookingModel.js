@@ -1,19 +1,15 @@
-const db = require('../db');
+const db = require("../db");
 
 const Booking = {
     create: (bookingData, callback) => {
-        const { user_id, item_id, rental_period_id, start_date, end_date, username } = bookingData;
-
-        if (user_id === undefined || item_id === undefined || rental_period_id === undefined || !start_date || !end_date || !username) {
-            return callback(new Error("All fields are required."));
-        }
+        const { item_id, user_id, start_date, end_date, total_price } = bookingData;
 
         const query = `
-            INSERT INTO bookings (user_id, item_id, rental_period_id, start_date, end_date, username)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price)
+            VALUES (?, ?, ?, ?, ?)
         `;
 
-        db.connection.execute(query, [user_id, item_id, rental_period_id, start_date, end_date, username], (error, result) => {
+        db.execute(query, [item_id, user_id, start_date, end_date, total_price], (error, result) => {
             if (error) return callback(error);
             callback(null, result);
         });
@@ -21,7 +17,7 @@ const Booking = {
 
     getAll: (callback) => {
         const query = 'SELECT * FROM bookings';
-        db.connection.execute(query, (error, results) => {
+        db.execute(query, (error, results) => {
             if (error) return callback(error);
             callback(null, results);
         });
@@ -29,22 +25,22 @@ const Booking = {
 
     getById: (id, callback) => {
         const query = 'SELECT * FROM bookings WHERE id = ?';
-        db.connection.execute(query, [id], (error, results) => {
+        db.execute(query, [id], (error, results) => {
             if (error) return callback(error);
             callback(null, results[0]);
         });
     },
 
     update: (id, bookingData, callback) => {
-        const { user_id, item_id, rental_period_id, start_date, end_date, username } = bookingData;
+        const { status } = bookingData;
 
         const query = `
             UPDATE bookings
-            SET user_id = ?, item_id = ?, rental_period_id = ?, start_date = ?, end_date = ?, username = ?
+            SET status = ?
             WHERE id = ?
         `;
 
-        db.connection.execute(query, [user_id, item_id, rental_period_id, start_date, end_date, username, id], (error, results) => {
+        db.execute(query, [status, id], (error, results) => {
             if (error) return callback(error);
             callback(null, results);
         });
@@ -52,7 +48,7 @@ const Booking = {
 
     delete: (id, callback) => {
         const query = 'DELETE FROM bookings WHERE id = ?';
-        db.connection.execute(query, [id], (error, results) => {
+        db.execute(query, [id], (error, results) => {
             if (error) return callback(error);
             callback(null, results);
         });

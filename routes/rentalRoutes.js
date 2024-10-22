@@ -1,20 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const RentalPeriodController = require('../controllers/rentalPeriodController');
+const checkPermissions = require('../middleware/checkPermissions');
 
-// إنشاء فترة إيجار جديدة
-router.post('/AddRentalPeriod', RentalPeriodController.createRentalPeriod);
+// إنشاء فترة إيجار جديدة (محمية بصلاحيات المالك فقط)
+router.post('/AddRentalPeriod', checkPermissions, RentalPeriodController.createRentalPeriod);
 
-// استرجاع جميع فترات الإيجار
-router.get('/GetAllRentalPeriod', RentalPeriodController.getAllRentalPeriods);
+// تعديل فترة إيجار (محمية بصلاحيات المالك فقط)
+router.put('/updateRentalPeriod/:id', checkPermissions, RentalPeriodController.updateRentalPeriod);
 
-// استرجاع فترة إيجار معينة
-router.get('/:id', RentalPeriodController.getRentalPeriodById);
-
-// تحديث فترة إيجار
-router.put('/:id', RentalPeriodController.updateRentalPeriod);
-
-// حذف فترة إيجار
-router.delete('/:id', RentalPeriodController.deleteRentalPeriod);
+// حذف فترة إيجار (محمية بصلاحيات المالك فقط)
+router.delete('/deleteRentalPeriod/:id', checkPermissions, RentalPeriodController.deleteRentalPeriod);
 
 module.exports = router;

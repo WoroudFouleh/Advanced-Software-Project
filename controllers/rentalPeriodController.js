@@ -1,4 +1,40 @@
-// controllers/rentalPeriodController.js
+const RentalPeriod = require('../models/RentalPeriod');
+
+// إنشاء فترة إيجار
+exports.createRentalPeriod = (req, res) => {
+    const rentalPeriodData = req.body;
+    const owner_id = req.user.id;  // الحصول على معرف المالك من التوكين
+
+    RentalPeriod.create(owner_id, rentalPeriodData, (error, result) => {
+        if (error) return res.status(500).json({ error: error.message });
+        res.status(201).json({ message: "Rental period created successfully.", result });
+    });
+};
+
+// تحديث فترة إيجار
+exports.updateRentalPeriod = (req, res) => {
+    const rentalPeriodId = req.params.id;
+    const rentalPeriodData = req.body;
+    const owner_id = req.user.id;  // الحصول على معرف المالك من التوكين
+
+    RentalPeriod.update(owner_id, rentalPeriodId, rentalPeriodData, (error, result) => {
+        if (error) return res.status(500).json({ error: error.message });
+        res.status(200).json({ message: "Rental period updated successfully." });
+    });
+};
+
+// حذف فترة إيجار
+exports.deleteRentalPeriod = (req, res) => {
+    const rentalPeriodId = req.params.id;
+    const owner_id = req.user.id;  // الحصول على معرف المالك من التوكين
+
+    RentalPeriod.delete(owner_id, rentalPeriodId, (error, result) => {
+        if (error) return res.status(500).json({ error: error.message });
+        res.status(200).json({ message: "Rental period deleted successfully." });
+    });
+};
+
+/*// controllers/rentalPeriodController.js
 const RentalPeriod = require('../models/RentalPeriod');
 
 // إنشاء فترة إيجار
@@ -50,3 +86,4 @@ exports.deleteRentalPeriod = (req, res) => {
         res.status(200).json({ message: "Rental period deleted successfully." });
     });
 };
+*/

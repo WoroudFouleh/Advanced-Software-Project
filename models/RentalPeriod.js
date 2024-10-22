@@ -1,4 +1,4 @@
-const db = require("../db");
+/*const db = require("../db");
 
 const rentalPeriod = {
     create: (rentalPeriodData, callback) => {
@@ -60,3 +60,4 @@ const rentalPeriod = {
 };
 
 module.exports = rentalPeriod;
+*/

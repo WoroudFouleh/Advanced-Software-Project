@@ -1,12 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const BookingController = require('../controllers/bookingController');
+const checkPermissions = require('../middleware/checkPermissions');
 
-router.post('/create', BookingController.createBooking);
-router.get('/', BookingController.getAllBookings);
-router.get('/:id', BookingController.getBookingById);
-router.put('/update/:id', BookingController.updateBooking);
-router.delete('/delete/:id', BookingController.deleteBooking);
+// إنشاء حجز جديد
+router.post('/addBooking', checkPermissions, BookingController.createBooking);
+
+// استرجاع جميع الحجوزات
+router.get('/getAllBookings', checkPermissions, BookingController.getAllBookings);
+
+// استرجاع حجز معين
+router.get('/:id', checkPermissions, BookingController.getBookingById);
+
+// تحديث حجز
+router.put('/:id', checkPermissions, BookingController.updateBooking);
+
+// حذف حجز
+router.delete('/:id', checkPermissions, BookingController.deleteBooking);
 
 module.exports = router;
-
