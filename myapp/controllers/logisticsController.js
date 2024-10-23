@@ -5,9 +5,16 @@ require('dotenv').config();
 exports.createLogistics = async (req, res) => {
     try {
         const { userId, pickupLocation, deliveryAddress, deliveryOption } = req.body;
+
+        if (!userId || !pickupLocation || !deliveryAddress || !deliveryOption) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
         const logistics = await Logistics.createLogistics({ userId, pickupLocation, deliveryAddress, deliveryOption });
+
         res.status(201).json({ message: 'Logistics option created', logistics });
     } catch (error) {
+        console.error('Error creating logistics option:', error); // تحقق من وحدة التحكم
         res.status(500).json({ error: 'An error occurred while creating logistics option' });
     }
 };
@@ -33,9 +40,10 @@ exports.getLogisticsById = async (req, res) => {
     }
 };
 
+const { sendNotification } = require('../services/notificationService'); // Import the notification service
+
 exports.updateLogistics = async (req, res) => {
     try {
-        // Get the existing logistics entry by ID
         const logistics = await Logistics.getLogisticsById(req.params.id);
         if (!logistics) {
             return res.status(404).json({ error: 'Logistics not found' });
@@ -43,7 +51,6 @@ exports.updateLogistics = async (req, res) => {
 
         const { pickupLocation, deliveryAddress, deliveryOption, status } = req.body;
 
-        // Use the model's update function to update the logistics entry
         const result = await Logistics.updateLogistics(req.params.id, {
             pickupLocation: pickupLocation || logistics.pickupLocation,
             deliveryAddress: deliveryAddress || logistics.deliveryAddress,
@@ -51,11 +58,17 @@ exports.updateLogistics = async (req, res) => {
             status: status || logistics.status
         });
 
+        // Check if the status has changed to 'in_progress'
+        if (status === 'in_progress' && logistics.status !== 'in_progress') {
+            await sendNotification(logistics.userId, 'Your logistics is now in progress.');
+        }
+
         res.status(200).json({ message: 'Logistics updated', result });
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while updating logistics' });
     }
 };
+
 
 
 exports.deleteLogistics = async (req, res) => {

@@ -4,8 +4,8 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const connection = require('./db'); // الاتصال بقاعدة البيانات من ملف db.js
 const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
-const userRoute = require('./routes/user'); // مسار المستخدمين
 const itemRoutes = require('./routes/itemRoutes'); // This should be the correct relative path
+const userRoutes = require('./routes/userRoutes'); // This should be the correct relative path
 const logisticsRoutes = require('./routes/logistics');
 
 app.use(express.json()); // To handle JSON requests
@@ -22,6 +22,8 @@ app.use('/auth1', authRoute);
 
 console.log("User Route Loaded");
 app.use('/api', itemRoutes);
+app.use('/api2', userRoutes); // ربط المسارات
+
 console.log("Item Routes Loaded");
 app.use('/api/logistics', logisticsRoutes);
 console.log("logistics Routes Loaded");

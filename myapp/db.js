@@ -17,7 +17,7 @@ async function syncDatabase() {
             pickupLocation VARCHAR(255), 
             deliveryAddress VARCHAR(255), 
             deliveryOption ENUM('pickup', 'delivery') NOT NULL, 
-            status ENUM('pending', 'completed') DEFAULT 'pending'
+            status ENUM('pending', 'completed', 'in_progress') DEFAULT 'pending'
         )`);
 
         // Create Items table

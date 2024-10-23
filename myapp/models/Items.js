@@ -2,19 +2,19 @@ const mysql = require('mysql2');
 
 // إعداد اتصال MySQL
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    database: 'noor2',
-    password: ''
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'noor2'
 });
 
 exports.createItem = (itemData, callback) => {
     const { name, category, description, basePricePerDay, basePricePerHour, username, status } = itemData;
-
     // تحقق من القيم المطلوبة
     if (!name || !category || !description || basePricePerDay === undefined || !username || !status) {
-        return callback(new Error("All fields are required."));
-    }
+      return callback(new Error("All fields are required."));
+  }
+  
 
     // تنفيذ الاستعلام
     const query = `
