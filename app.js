@@ -30,7 +30,7 @@ console.log("Item Routes Loaded");
 app.use('/api/rentalPeriods', rentalPeriodRoutes);
 console.log("Rental Period Routes Loaded");
 
-app.use('/api/bookings', bookingRoutes);
+app.use('/api', bookingRoutes);
 console.log("Booking Routes Loaded"); 
 
 app.use('/api/pricing-rules', pricingRulesRoute)

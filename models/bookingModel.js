@@ -1,5 +1,4 @@
 const db = require("../db");
-
 const Booking = {
     create: (bookingData, callback) => {
         const { item_id, user_id, start_date, end_date, total_price } = bookingData;

@@ -1,5 +1,3 @@
-// bookingController.js
-
 const db = require('../db');
 
 // دالة لحساب السعر الإجمالي
@@ -21,10 +19,18 @@ function calculateTotalPrice(startDate, endDate, basePricePerHour, basePricePerD
 
 // دالة لإنشاء حجز مع حساب السعر الإجمالي
 const createBooking = (req, res) => {
-    const { itemId, userId, startDate, endDate } = req.body;
+    const itemId = req.body.item_id || null;
+    const userId = req.body.user_id || null;
+    const startDate = req.body.start_date || null;
+    const endDate = req.body.end_date || null;
+
+    console.log("item_id:", itemId);
+    console.log("user_id:", userId);
+    console.log("start_date:", startDate);
+    console.log("end_date:", endDate);
 
     // الحصول على سعر العنصر من قاعدة البيانات
-    const query = 'SELECT price_per_hour, price_per_day FROM items WHERE id = ?';
+    const query = 'SELECT basePricePerHour, basePricePerDay FROM items WHERE id = ?';
     db.execute(query, [itemId], (error, results) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length === 0) return res.status(404).send("Item not found.");
@@ -41,7 +47,61 @@ const createBooking = (req, res) => {
     });
 };
 
+// دالة لاسترجاع جميع الحجوزات
+const getAllBookings = (req, res) => {
+    const query = 'SELECT * FROM bookings';
+    db.execute(query, (error, results) => {
+        if (error) return res.status(500).send("Database error.");
+        res.status(200).json(results);
+    });
+};
+
+// دالة لاسترجاع حجز معين حسب الـ ID
+const getBookingById = (req, res) => {
+    const bookingId = req.params.id;
+    const query = 'SELECT * FROM bookings WHERE id = ?';
+    db.execute(query, [bookingId], (error, results) => {
+        if (error) return res.status(500).send("Database error.");
+        if (results.length === 0) return res.status(404).send("Booking not found.");
+        res.status(200).json(results[0]);
+    });
+};
+
+// دالة لتحديث حجز
+const updateBooking = (req, res) => {
+    const bookingId = req.params.id;
+    const { startDate, endDate } = req.body;
+
+    const query = 'SELECT price_per_hour, price_per_day FROM items WHERE id = (SELECT item_id FROM bookings WHERE id = ?)';
+    db.execute(query, [bookingId], (error, results) => {
+        if (error) return res.status(500).send("Database error.");
+        if (results.length === 0) return res.status(404).send("Item not found for the booking.");
+
+        const { price_per_hour, price_per_day } = results[0];
+        const totalPrice = calculateTotalPrice(startDate, endDate, price_per_hour, price_per_day);
+
+        const updateQuery = 'UPDATE bookings SET start_date = ?, end_date = ?, total_price = ? WHERE id = ?';
+        db.execute(updateQuery, [startDate, endDate, totalPrice, bookingId], (error) => {
+            if (error) return res.status(500).send("Error updating booking.");
+            res.status(200).send("Booking updated successfully.");
+        });
+    });
+};
+
+// دالة لحذف حجز
+const deleteBooking = (req, res) => {
+    const bookingId = req.params.id;
+    const query = 'DELETE FROM bookings WHERE id = ?';
+    db.execute(query, [bookingId], (error) => {
+        if (error) return res.status(500).send("Database error.");
+        res.status(200).send("Booking deleted successfully.");
+    });
+};
+
 module.exports = {
     createBooking,
-    calculateTotalPrice // إذا كنت بحاجة لاستخدامها في مكان آخر
+    getAllBookings,
+    getBookingById,
+    updateBooking,
+    deleteBooking
 };
