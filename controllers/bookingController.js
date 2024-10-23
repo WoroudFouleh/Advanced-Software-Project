@@ -38,29 +38,29 @@ const createBooking = (req, res) => {
             (start_date < ? AND end_date > ?)
         )
     `;
-    
+
     db.execute(checkQuery, [itemId, endDate, startDate, startDate, endDate], (error, results) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length > 0) return res.status(400).send("Booking already exists for this item in the selected time period.");
 
         // الحصول على سعر العنصر من قاعدة البيانات
-        const query = 'SELECT price_per_hour, price_per_day FROM items WHERE id = ?';
+        const query = 'SELECT basePricePerHour, basePricePerDay FROM items WHERE id = ?';
         db.execute(query, [itemId], (error, results) => {
             if (error) return res.status(500).send("Database error.");
             if (results.length === 0) return res.status(404).send("Item not found.");
 
-            const { price_per_hour, price_per_day } = results[0];
+            const { basePricePerHour, basePricePerDay } = results[0]; // استخدم الأسماء الصحيحة هنا
             
             // طباعة الأسعار للتأكد
-            console.log("Base Price Per Hour:", price_per_hour);
-            console.log("Base Price Per Day:", price_per_day);
+            console.log("Base Price Per Hour:", basePricePerHour);
+            console.log("Base Price Per Day:", basePricePerDay);
             
             // تحقق من أن الأسعار ليست undefined
-            if (price_per_hour === undefined || price_per_day === undefined) {
+            if (basePricePerHour === undefined || basePricePerDay === undefined) {
                 return res.status(500).send("Price information is missing for the item.");
             }
 
-            const totalPrice = calculateTotalPrice(startDate, endDate, price_per_hour, price_per_day);
+            const totalPrice = calculateTotalPrice(startDate, endDate, basePricePerHour, basePricePerDay);
 
             const insertQuery = 'INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price) VALUES (?, ?, ?, ?, ?)';
             db.execute(insertQuery, [itemId, userId, startDate, endDate, totalPrice], (error) => {
