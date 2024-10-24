@@ -10,10 +10,10 @@ router.post('/addBooking', checkPermissions, BookingController.createBooking);
 router.get('/getAllBookings', checkPermissions, BookingController.getAllBookings);
 
 // استرجاع حجز معين
-router.get('/:id', checkPermissions, BookingController.getBookingById);
+router.get('/getBookingById/:id', checkPermissions, BookingController.getBookingById);
 
 // تحديث حجز
-router.put('/:id', checkPermissions, BookingController.updateBooking);
+router.put('/updateBooking/:id', checkPermissions, BookingController.updateBooking);
 
 // حذف حجز
 router.delete('/deleteBooking/:id', checkPermissions, BookingController.deleteBooking);
