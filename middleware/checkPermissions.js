@@ -30,6 +30,9 @@ const checkPermissions = (req, res, next) => {
             }
            else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
+            }
+            else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
+                next();
             } else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {
@@ -58,13 +61,16 @@ const checkPermissions = (req, res, next) => {
             } else if (req.method === 'PUT' && req.path === '/profile') {
                 next();
             }
+            else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
+                next();
+            }
             else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
             }
             else if (req.method === 'POST' && req.path === '/addBooking') {
                 next();
             } 
-            else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/'))  {
+            else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/'))  {
                 next();
             }  else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();

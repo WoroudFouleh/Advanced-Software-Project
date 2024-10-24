@@ -91,18 +91,28 @@ const getBookingById = (req, res) => {
     });
 };
 
-// دالة لتحديث حجز
 const updateBooking = (req, res) => {
     const bookingId = req.params.id;
     const { startDate, endDate } = req.body;
 
-    const query = 'SELECT price_per_hour, price_per_day FROM items WHERE id = (SELECT item_id FROM bookings WHERE id = ?)';
+    // التحقق من وجود القيم قبل المتابعة
+    if (!startDate || !endDate) {
+        return res.status(400).send("startDate and endDate are required.");
+    }
+
+    const query = 'SELECT basePricePerHour, basePricePerDay FROM items WHERE id = (SELECT item_id FROM bookings WHERE id = ?)';
     db.execute(query, [bookingId], (error, results) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length === 0) return res.status(404).send("Item not found for the booking.");
 
-        const { price_per_hour, price_per_day } = results[0];
-        const totalPrice = calculateTotalPrice(startDate, endDate, price_per_hour, price_per_day);
+        const { basePricePerHour, basePricePerDay } = results[0];
+
+        // التأكد من أن الأسعار ليست غير معرفة
+        if (!basePricePerHour || !basePricePerDay) {
+            return res.status(500).send("Price information missing for the item.");
+        }
+
+        const totalPrice = calculateTotalPrice(startDate, endDate, basePricePerHour, basePricePerDay);
 
         const updateQuery = 'UPDATE bookings SET start_date = ?, end_date = ?, total_price = ? WHERE id = ?';
         db.execute(updateQuery, [startDate, endDate, totalPrice, bookingId], (error) => {
@@ -111,6 +121,7 @@ const updateBooking = (req, res) => {
         });
     });
 };
+
 
 // دالة لحذف حجز
 const deleteBooking = (req, res) => {
