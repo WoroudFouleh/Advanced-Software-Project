@@ -52,6 +52,9 @@ const checkPermissions = (req, res, next) => {
             }
             else if (req.method === 'POST' && req.path === '/addBooking') {
                 next();
+            } 
+            else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/'))  {
+                next();
             }  else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
             } else {
