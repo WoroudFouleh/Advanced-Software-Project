@@ -83,7 +83,10 @@ const User = {
                 SET 
                     username = COALESCE(?, username), 
                     password = COALESCE(?, password), 
-                    role = COALESCE(?, role) 
+                    role = COALESCE(?, role),
+                    email = COALESCE(?, email),
+                    reward_points = COALESCE(?, reward_points)
+
                 WHERE id = ?
             `;
         

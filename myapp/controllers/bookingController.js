@@ -1,4 +1,29 @@
 const db = require('../db');
+function getDiscountPercentage(userPoints, callback) {
+    console.log("User points:", userPoints);  // عرض النقاط
+    
+    const query = `
+        SELECT discount_percentage 
+        FROM discount_levels 
+        WHERE min_points <= ? 
+        ORDER BY min_points DESC 
+        LIMIT 1
+    `;
+
+    db.execute(query, [userPoints], (error, results) => {
+        if (error) {
+            console.error("Error fetching discount percentage:", error);
+            return callback(0);  // في حال وجود خطأ، لا يتم تطبيق خصم
+        }
+
+        console.log("Discount query results:", results);  // عرض نتائج الاستعلام
+
+        const discount = results.length > 0 ? results[0].discount_percentage : 0;
+        console.log("Applicable discount:", discount);  // عرض النسبة النهائية
+        callback(discount);
+    });
+}
+
 
 
 // دالة لحساب السعر الكلي ورسوم المنصة
@@ -17,20 +42,46 @@ function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, base
     // حساب الإيرادات الكلية
     const totalRevenue = totalPrice + platformFee;
 
-    return { totalPrice, platformFee, totalRevenue };
+    return { totalPrice, platformFee, totalRevenue, durationInHours };
 }
 
-// دالة لإنشاء حجز مع حساب السعر الكلي ورسوم المنصة
+// دالة لتحديث نقاط المستخدم
+function updateUserPoints(userId, bookingId, durationInHours) {
+    const pointsPerHour = 5;
+    const earnedPoints = durationInHours * pointsPerHour;
+
+    console.log("Updating user points:", { userId, bookingId, earnedPoints });
+
+    const updateUserQuery = `
+        UPDATE users 
+        SET reward_points = reward_points + ?
+        WHERE id = ?
+    `;
+
+    db.execute(updateUserQuery, [earnedPoints, userId], (error) => {
+        if (error) {
+            console.error("Error updating user points:", error);
+        } else {
+            console.log("User points updated successfully.");
+        }
+
+        // إضافة سجل في user_points_history
+        const insertHistoryQuery = `
+            INSERT INTO user_points_history (user_id, booking_id, points_earned)
+            VALUES (?, ?, ?)
+        `;
+        db.execute(insertHistoryQuery, [userId, bookingId, earnedPoints], (error) => {
+            if (error) console.error("Error inserting points history:", error);
+            else console.log("Points history inserted successfully.");
+        });
+    });
+}
+// دالة لإنشاء حجز مع حساب السعر الكلي ورسوم المنصة وتحديث نقاط المستخدم
 const createBooking = (req, res) => {
     const itemId = req.body.item_id || null;
     const userId = req.body.user_id || null;
     const startDate = req.body.start_date || null;
     const endDate = req.body.end_date || null;
-
-    console.log("item_id:", itemId);
-    console.log("user_id:", userId);
-    console.log("start_date:", startDate);
-    console.log("end_date:", endDate);
 
     // التحقق مما إذا كان هناك حجز متداخل
     const checkQuery = `
@@ -54,35 +105,53 @@ const createBooking = (req, res) => {
 
             const { basePricePerHour, basePricePerDay } = results[0];
 
-            // طباعة الأسعار للتأكد
-            console.log("Base Price Per Hour:", basePricePerHour);
-            console.log("Base Price Per Day:", basePricePerDay);
+            // حساب السعر الكلي، رسوم المنصة، والإيرادات الكلية ومدة الحجز بالساعات
+            const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay);
 
-            // التحقق من أن الأسعار ليست undefined
-            if (basePricePerHour === undefined || basePricePerDay === undefined) {
-                return res.status(500).send("Price information is missing for the item.");
-            }
+            // الحصول على نقاط المستخدم
+            const userPointsQuery = 'SELECT reward_points FROM users WHERE id = ?';
+            db.execute(userPointsQuery, [userId], (error, userResults) => {
+                if (error) return res.status(500).send("Database error.");
 
-            // حساب السعر الكلي، رسوم المنصة، والإيرادات الكلية
-            const { totalPrice, platformFee, totalRevenue } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay);
+                const userPoints = userResults[0].reward_points;
+                console.log(userPoints);
 
-            // إدخال الحجز مع رسوم المنصة والإيرادات في قاعدة البيانات
-            const insertQuery = `
-                INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
-            db.execute(insertQuery, [itemId, userId, startDate, endDate, totalPrice, platformFee, totalRevenue], (error) => {
-                if (error) return res.status(500).send("Error creating booking.");
-                res.status(201).json({
-                    message: "Booking created successfully.",
-                    totalPrice,
-                    platformFee,
-                    totalRevenue
+                // الحصول على نسبة الخصم بناءً على النقاط
+                getDiscountPercentage(userPoints, (discountPercentage) => {
+                    // تطبيق الخصم على السعر الكلي
+                    const discountAmount = totalPrice * (discountPercentage / 100);
+                    const discountedTotalPrice = totalPrice - discountAmount;
+
+                    // إدخال الحجز مع الخصم ورسوم المنصة والإيرادات في قاعدة البيانات
+                    const insertQuery = `
+                        INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_percentage, discount_amount) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `;
+                    db.execute(insertQuery, [itemId, userId, startDate, endDate, discountedTotalPrice, platformFee, totalRevenue, discountPercentage, discountAmount], (error, result) => {
+                        if (error) return res.status(500).send("Error creating booking.");
+
+                        const bookingId = result.insertId;
+
+                        // تحديث نقاط المستخدم بعد إنشاء الحجز
+                        updateUserPoints(userId, bookingId, durationInHours);
+
+                        res.status(201).json({
+                            message: "Booking created successfully.",
+                            originalTotalPrice: totalPrice,
+                            discountPercentage,
+                            discountAmount,
+                            finalTotalPrice: discountedTotalPrice,
+                            platformFee,
+                            totalRevenue
+                        });
+                    });
                 });
             });
         });
     });
 };
+
+
 
 // دالة لاسترجاع جميع حجوزات اليوزر أو المالك
 const getAllBookings = (req, res) => {
