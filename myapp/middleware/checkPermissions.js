@@ -28,6 +28,12 @@ const checkPermissions = (req, res, next) => {
             if (req.path === '/users') {
                 return res.status(403).send("You do not have permission to view users.");
             }
+            if (req.path.startsWith('/api/statistics')) {
+                return res.status(403).send("You do not have permission to access statistics.");
+            }
+            if (req.path.startsWith('/api/discount-levels')) {
+                return res.status(403).send("You do not have permission to access statistics.");
+            }
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
             } else if (req.method === 'POST' && req.path === '/additems') {
@@ -53,6 +59,12 @@ const checkPermissions = (req, res, next) => {
             }
         } else if (user.role === 'user') {
             // صلاحيات الـ user
+            if (req.path.startsWith('/api/statistics')) {
+                return res.status(403).send("You do not have permission to access statistics.");
+            }
+            if (req.path.startsWith('/api/discount-levels')) {
+                return res.status(403).send("You do not have permission to access statistics.");
+            }
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {

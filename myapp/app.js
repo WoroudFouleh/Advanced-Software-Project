@@ -7,6 +7,9 @@ const userRoute = require('./routes/userRoutes'); // مسار المستخدمي
 const itemRoutes = require('./routes/itemRoutes'); // This should be the correct relative path
 const userRoutes = require('./routes/userRoutes'); // This should be the correct relative path
 const bookingRoutes = require('./routes/bookingRoutes');
+const statisticsRoutes = require('./routes/statisticsRoutes');
+const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
+
 
 const app = express();
 app.use(express.json());
@@ -32,6 +35,9 @@ app.use('/api2', userRoutes); // ربط المسارات
 console.log("Item Routes Loaded");
 app.use('/api', bookingRoutes);
 console.log("Booking Routes Loaded"); 
+app.use('/api/statistics', statisticsRoutes);
+console.log("statistics Routes Loaded"); 
+app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount levels routes
 
 
 // تحديد منفذ الاستماع للخادم
