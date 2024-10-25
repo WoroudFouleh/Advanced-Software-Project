@@ -25,6 +25,9 @@ const checkPermissions = (req, res, next) => {
             next();
         } else if (user.role === 'owner') {
             // صلاحيات الـ owner
+            if (req.path.startsWith('/api/user-points-history')) {
+                return res.status(403).send("You do not have permission to access statistics.");
+            }
             if (req.path === '/users') {
                 return res.status(403).send("You do not have permission to view users.");
             }
@@ -59,6 +62,9 @@ const checkPermissions = (req, res, next) => {
             }
         } else if (user.role === 'user') {
             // صلاحيات الـ user
+            if (req.path.startsWith('/api/user-points-history')) {
+                next();
+            }
             if (req.path.startsWith('/api/statistics')) {
                 return res.status(403).send("You do not have permission to access statistics.");
             }

@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes'); // This should be the correct
 const bookingRoutes = require('./routes/bookingRoutes');
 const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
+const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
 
 
 const app = express();
@@ -38,6 +39,7 @@ console.log("Booking Routes Loaded");
 app.use('/api/statistics', statisticsRoutes);
 console.log("statistics Routes Loaded"); 
 app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount levels routes
+app.use('/api/user-points-history', userPointsHistoryRoutes);
 
 
 // تحديد منفذ الاستماع للخادم
