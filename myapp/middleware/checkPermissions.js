@@ -1,37 +1,48 @@
-// middleware/usersPermissions.js
 const jwt = require('jsonwebtoken');
 
 // تعريف checkPermissions
 const checkPermissions = (req, res, next) => {
     const token = req.headers['authorization'];
-    if (!token) return res.status(403).send("Access denied.");
+    if (!token) {
+        console.log("No token provided."); // إضافة رسالة تفيد بعدم وجود توكن
+        return res.status(403).send("Access denied.");
+    }
 
-    jwt.verify(token, '789', (err, user) => {
-        if (err) return res.status(403).send("Invalid token.");
+    // إزالة كلمة "Bearer " إذا كانت موجودة
+    const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token; // تأكد من تعريف المتغير هنا
 
+    jwt.verify(tokenWithoutBearer, '789', (err, user) => {
+        if (err) {
+            console.log("Invalid token."); // إضافة رسالة تفيد بأن التوكن غير صحيح
+            return res.status(403).send("Invalid token.");
+        }
+
+        console.log(user); // إضافة هذا السطر للتحقق من بيانات المستخدم
         req.user = user;
 
-       
         // تحقق من صلاحيات المستخدم
         if (user.role === 'admin') {
-            // إذا كان المستخدم Admin، يسمح له بجميع العمليات
             next();
         } else if (user.role === 'owner') {
             // صلاحيات الـ owner
             if (req.path === '/users') {
-                // منع الأونر من الوصول إلى /users
                 return res.status(403).send("You do not have permission to view users.");
             }
-            // باقي صلاحيات الـ owner
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
             } else if (req.method === 'POST' && req.path === '/additems') {
                 next();
             } else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
+            } else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
+                next();
             } else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {
+                next();
+            } else if (req.method === 'GET' && req.path === '/getAllBookings') {
+                next();
+            } else if (req.method === 'GET' && req.path.startsWith('/getBookingById/')) {
                 next();
             } else if (req.method === 'PUT' && req.path === '/profile') {
                 next();
@@ -47,6 +58,12 @@ const checkPermissions = (req, res, next) => {
             } else if (req.method === 'GET' && req.path === '/profile') {
                 next();
             } else if (req.method === 'PUT' && req.path === '/profile') {
+                next();
+            } else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
+                next();
+            } else if (req.method === 'POST' && req.path === '/addBooking') {
+                next();
+            } else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/')) {
                 next();
             } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();

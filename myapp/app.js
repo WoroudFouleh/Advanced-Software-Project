@@ -6,6 +6,7 @@ const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
 const userRoute = require('./routes/userRoutes'); // مسار المستخدمين
 const itemRoutes = require('./routes/itemRoutes'); // This should be the correct relative path
 const userRoutes = require('./routes/userRoutes'); // This should be the correct relative path
+const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
 app.use(express.json());
@@ -29,6 +30,8 @@ app.use('/api', itemRoutes);
 app.use('/api2', userRoutes); // ربط المسارات
 
 console.log("Item Routes Loaded");
+app.use('/api', bookingRoutes);
+console.log("Booking Routes Loaded"); 
 
 
 // تحديد منفذ الاستماع للخادم
