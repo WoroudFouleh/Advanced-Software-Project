@@ -7,6 +7,10 @@ const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
 const itemRoutes = require('./routes/itemRoutes'); // This should be the correct relative path
 const userRoutes = require('./routes/userRoutes'); // This should be the correct relative path
 const logisticsRoutes = require('./routes/logistics');
+const bookingRoutes = require('./routes/bookingRoutes');
+const statisticsRoutes = require('./routes/statisticsRoutes');
+const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
+const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
 
 app.use(express.json()); // To handle JSON requests
 
@@ -27,6 +31,13 @@ app.use('/api2', userRoutes); // ربط المسارات
 console.log("Item Routes Loaded");
 app.use('/api/logistics', logisticsRoutes);
 console.log("logistics Routes Loaded");
+
+app.use('/api', bookingRoutes);
+console.log("Booking Routes Loaded"); 
+app.use('/api/statistics', statisticsRoutes);
+console.log("statistics Routes Loaded"); 
+app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount levels routes
+app.use('/api/user-points-history', userPointsHistoryRoutes)
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
