@@ -1,12 +1,11 @@
-const router = require("express").Router();
-const pricingRulesController = require('../controllers/pricingRulesController');
+const express = require('express');
+const router = express.Router();
+const pricingRulesController = require('../controllers/pricingRulesController'); // تأكد من المسار صحيح
 const checkPermissions = require('../middleware/checkPermissions');
 
-// Routes for pricing rules with permission checks
-router.post('/add', checkPermissions, pricingRulesController.createPricingRule); // إضافة قاعدة تسعير جديدة
-router.get('/list', checkPermissions, pricingRulesController.getAllPricingRules); // الحصول على جميع قواعد التسعير
-//router.get('/view/:id', checkPermissions, pricingRulesController.getPricingRuleById); // عرض قاعدة تسعير محددة
-router.put('/update/:id', checkPermissions, pricingRulesController.updatePricingRule); // تحديث قاعدة تسعير محددة
-//router.delete('/delete/:id', checkPermissions, pricingRulesController.deletePricingRule); // حذف قاعدة تسعير محددة
+// تأكد من أن هذه الدوال معرفة في pricingRulesController
+router.post('/add_pricing_rule', checkPermissions, pricingRulesController.createPricingRule);
+router.put('/update_pricing_rule/:id', checkPermissions, pricingRulesController.updatePricingRule);
+router.get('/list_pricing_rules', checkPermissions, pricingRulesController.getAllPricingRules);
 
 module.exports = router;

@@ -10,49 +10,55 @@ const checkPermissions = (req, res, next) => {
         if (err) return res.status(403).send("Invalid token.");
 
         req.user = user;
+        console.log("User role:", user.role);
+        console.log("Request path:", req.path);
+        console.log("Request method:", req.method);
+        console.log("User Info:", req.user);
 
-       
+        const userRole = user.role.toLowerCase();
+
         // تحقق من صلاحيات المستخدم
-        if (user.role === 'admin') {
-            // إذا كان المستخدم Admin، يسمح له بجميع العمليات
+        if (userRole === 'admin') {
+            console.log("Access granted: Admin has full permissions.");
             next();
-        } else if (user.role === 'owner') {
-            // صلاحيات الـ owner
+        } else if (userRole === 'owner') {
+           
             if (req.path === '/users') {
-                // منع الأونر من الوصول إلى /users
-                return res.status(403).send("You do not have permission to view users.");
+                return res.status(403).send("You do not have permission to perform this action.");
             }
+            if (req.path === '/list_pricing_rule') {
+                next(); 
+            }
+
             // باقي صلاحيات الـ owner
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
             } else if (req.method === 'POST' && req.path === '/additems') {
                 next();
             }
-           else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
+            if (req.method === 'POST' && req.path === '/add_pricing_rule') {
                 next();
             }
-            else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
+           else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
+                next();
+            } else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
                 next();
             } else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {
                 next();
-            }
-            else if (req.method === 'GET' && req.path === '/getAllBookings') 
-            {
+            } else if (req.method === 'GET' && req.path === '/getAllBookings') {
                 next();
-            } 
-            else if (req.method === 'GET' && req.path.startsWith('/getBookingById/')) {
+            } else if (req.method === 'GET' && req.path.startsWith('/getBookingById/')) {
                 next();
-            }
-            else if (req.method === 'PUT' && req.path === '/profile') {
+            } else if (req.method === 'PUT' && req.path === '/profile') {
                 next();
             } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
             } else {
-                return res.status(403).send("You do not have permission to perform this action.");
+                return res.status(403).send("Access denied: This action is restricted to the owner’s properties only.");
             }
-        } else if (user.role === 'user') {
+        } else if (userRole === 'user') {
             // صلاحيات الـ user
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
@@ -60,19 +66,15 @@ const checkPermissions = (req, res, next) => {
                 next();
             } else if (req.method === 'PUT' && req.path === '/profile') {
                 next();
-            }
-            else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
+            } else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
                 next();
-            }
-            else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
+            } else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
-            }
-            else if (req.method === 'POST' && req.path === '/addBooking') {
+            } else if (req.method === 'POST' && req.path === '/addBooking') {
                 next();
-            } 
-            else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/'))  {
+            } else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/')) {
                 next();
-            }  else if (req.method === 'DELETE' && req.path === '/profile') {
+            } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
             } else {
                 return res.status(403).send("You do not have permission to perform this action.");
@@ -84,67 +86,3 @@ const checkPermissions = (req, res, next) => {
 };
 
 module.exports = checkPermissions;
-
-
-/*// middleware/usersPermissions.js
-const jwt = require('jsonwebtoken');
-
-// تعريف checkPermissions
-const checkPermissions = (req, res, next) => {
-    const token = req.headers['authorization'];
-    if (!token) return res.status(403).send("Access denied.");
-
-    jwt.verify(token, '789', (err, user) => {
-        if (err) return res.status(403).send("Invalid token.");
-
-        req.user = user;
-
-       
-        // تحقق من صلاحيات المستخدم
-        if (user.role === 'admin') {
-            // إذا كان المستخدم Admin، يسمح له بجميع العمليات
-            next();
-        } else if (user.role === 'owner') {
-            // صلاحيات الـ owner
-            if (req.path === '/users') {
-                // منع الأونر من الوصول إلى /users
-                return res.status(403).send("You do not have permission to view users.");
-            }
-            // باقي صلاحيات الـ owner
-            if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
-                next();
-            } else if (req.method === 'POST' && req.path === '/additems') {
-                next();
-            } else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
-                next();
-            } else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
-                next();
-            } else if (req.method === 'GET' && req.path === '/profile') {
-                next();
-            } else if (req.method === 'PUT' && req.path === '/profile') {
-                next();
-            } else if (req.method === 'DELETE' && req.path === '/profile') {
-                next();
-            } else {
-                return res.status(403).send("You do not have permission to perform this action.");
-            }
-        } else if (user.role === 'user') {
-            // صلاحيات الـ user
-            if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
-                next();
-            } else if (req.method === 'GET' && req.path === '/profile') {
-                next();
-            } else if (req.method === 'PUT' && req.path === '/profile') {
-                next();
-            } else if (req.method === 'DELETE' && req.path === '/profile') {
-                next();
-            } else {
-                return res.status(403).send("You do not have permission to perform this action.");
-            }
-        } else {
-            return res.status(403).send("Invalid role.");
-        }
-    });
-};
-
-module.exports = checkPermissions;*/
