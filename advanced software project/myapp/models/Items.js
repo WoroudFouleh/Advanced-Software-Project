@@ -1,46 +1,116 @@
-// models/Item.js
-const db = require('../db'); // Adjust the path if needed
+const mysql = require('mysql2');
 
-const Item = {
-    id: {
-        type: 'INTEGER',
-        autoIncrement: true,
-        primaryKey: true,
-    },
-    name: {
-        type: 'STRING',
-        allowNull: false,
-    },
-    description: {
-        type: 'TEXT',
-        allowNull: false,
-    },
-    basePricePerDay: {
-        type: 'FLOAT',
-        allowNull: false,
-    },
-    basePricePerHour: {
-        type: 'FLOAT',
-        allowNull: true, // The hourly price can be optional
-    },
-    ownerId: {
-        type: 'INTEGER',
-        allowNull: false,
-    },
-    availabilityStartDate: {
-        type: 'DATE',
-        allowNull: false,
-    },
-    availabilityEndDate: {
-        type: 'DATE',
-        allowNull: false,
-    },
-    status: {
-        type: 'ENUM',
-        values: ["available", "rented", "unavailable"],
-        defaultValue: "available",
-    },
+// إعداد اتصال MySQL
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: '123456789',
+  database: 'noor'
+});
+
+exports.createItem = (itemData, callback) => {
+    const { name, category, description, basePricePerDay, basePricePerHour, username, status } = itemData;
+    // تحقق من القيم المطلوبة
+    if (!name || !category || !description || basePricePerDay === undefined || !username || !status) {
+      return callback(new Error("All fields are required."));
+  }
+  
+
+    // تنفيذ الاستعلام
+    const query = `
+        INSERT INTO items (name, category, description, basePricePerDay, basePricePerHour, username, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    connection.execute(
+        query,
+        [name, category, description, basePricePerDay, basePricePerHour, username, status],
+        (error, result) => {
+            if (error) return callback(error);
+            callback(null, result);
+        }
+    );
 };
 
-// Export the Item model
-module.exports = Item;
+// دالة لاسترجاع جميع العناصر
+exports.getAllItems = (callback) => {
+  const query = 'SELECT * FROM items';
+
+  connection.execute(query, (error, results) => {
+    if (error) return callback(error);
+    callback(null, results);
+  });
+};
+
+// استرجاع عنصر معين باستخدام ID
+exports.getItemById = (id, callback) => {
+  const query = 'SELECT * FROM items WHERE id = ?';
+
+  connection.execute(query, [id], (error, results) => {
+    if (error) return callback(error);
+    callback(null, results[0]); // جلب العنصر الأول
+  });
+};
+
+// تحديث عنصر
+exports.updateItem = (id, itemData, callback) => {
+  const { name, category, description, basePricePerDay, basePricePerHour, username, status } = itemData;
+
+  const query = `
+    UPDATE items
+    SET name = ?, category = ?, description = ?, basePricePerDay = ?, basePricePerHour = ?, username = ?, status = ?
+    WHERE id = ?
+  `;
+
+  connection.execute(
+    query,
+    [name, category, description, basePricePerDay, basePricePerHour, username, status, id],
+    (error, results) => {
+      if (error) return callback(error);
+      callback(null, results);
+    }
+  );
+};
+
+// حذف عنصر
+exports.deleteItem = (id, callback) => {
+  const query = 'DELETE FROM items WHERE id = ?';
+
+  connection.execute(query, [id], (error, results) => {
+    if (error) return callback(error);
+    callback(null, results);
+  });
+};
+
+// دالة لتصفية العناصر
+exports.filterItems = (filters, callback) => {
+  const { category, minPrice, maxPrice, status } = filters;
+  let query = 'SELECT * FROM items WHERE 1 = 1';
+
+  const params = [];
+
+  if (category) {
+    query += ' AND category = ?';
+    params.push(category);
+  }
+
+  if (minPrice) {
+    query += ' AND basePricePerDay >= ?';
+    params.push(minPrice);
+  }
+
+  if (maxPrice) {
+    query += ' AND basePricePerDay <= ?';
+    params.push(maxPrice);
+  }
+
+  if (status) {
+    query += ' AND status = ?';
+    params.push(status);
+  }
+
+  connection.execute(query, params, (error, results) => {
+    if (error) return callback(error);
+    callback(null, results);
+  });
+};

@@ -1,35 +1,11 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../db");
-const { Sequelize } = require("sequelize");
-
-const Review = sequelize.define("Review", {
-    id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        
-    },
-    itemId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-    },
-    reviewerId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-    },
-    rating: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        
-        validate: { min: 1, max: 5 },
-    },
-    comment: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+// reviewModel.js
+module.exports = {
+    tableName: 'reviews',
+    columns: {
+        username: 'STRING',
+        itemId: 'INTEGER',
+        reviewerId: 'INTEGER', // Primary Key
+        rating: 'INTEGER',
+        comment: 'TEXT'
     }
-}, {
-    timestamps: true,
-});
-
-module.exports = Review;
+};

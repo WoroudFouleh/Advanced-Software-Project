@@ -1,17 +1,14 @@
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 
-// Create a connection pool to the database
-const pool = mysql.createPool({
-    host: 'localhost', // your host
-    user: 'root', // your database username
-    password: '123456789', // your database password
-    database: 'noor', // your database name
+// Setting up the database connection
+const connection = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: '123456789',
+    database: 'noor'
 });
 
-// Export the pool as a promise-based connection
-module.exports = pool.promise();
-
-
+module.exports = connection;
 
 /*const mysql = require('mysql2');
 

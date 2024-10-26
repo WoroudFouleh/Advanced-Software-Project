@@ -1,72 +1,130 @@
-const db = require('../db'); // Assuming you have set up your MySQL connection here
-const CryptoJS = require('crypto-js');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
+const Token = require('../models/tokenModel'); // تأكد من مسار النموذج الصحيح
+const transporter = require('../config/nodemailerConfig');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto'); // إضافة وحدة crypto هنا
 
-module.exports = {
-    createUser: async (req, res) => {
-        // Validate email
-        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-        if (!emailRegex.test(req.body.email)) {
-            return res.status(400).json({ status: false, message: "Invalid email format" });
+// تسجيل مستخدم جديد
+exports.register = (req, res) => {
+    const { username, password, email, role } = req.body; // إضافة البريد الإلكتروني
+
+    // تشفير كلمة المرور
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) return res.status(500).json({ message: 'Error hashing password' });
+
+        User.create(username, hashedPassword, email, role, (error, result) => { // إضافة البريد الإلكتروني هنا
+            if (error) return res.status(500).json({ message: 'Error creating user' });
+            res.status(201).json({ message: 'User registered successfully' });
+        });
+    });
+};
+exports.login = (req, res) => {
+    const { username, password } = req.body;
+
+    User.findByUsername(username, (error, results) => {
+        if (error || results.length === 0) {
+            return res.status(401).json({ message: 'Invalid username or password' });
         }
 
-        // Validate password length
-        const minPasswordLength = 8; // Minimum length for password
-        if (req.body.password.length < minPasswordLength) {
-            return res.status(400).json({ status: false, message: "Password should be at least " + minPasswordLength + " characters long" });
-        }
+        const user = results[0];
 
-        // Check if email already exists using raw SQL
-        const checkEmailQuery = 'SELECT * FROM users WHERE email = ?';
-        const emailExist = await db.query(checkEmailQuery, [req.body.email]);
-        if (emailExist[0].length > 0) {
-            return res.status(400).json({ status: false, message: "Email already exists" });
-        }
-
-        // If email doesn't exist, proceed with creating the new user
-        const encryptedPassword = CryptoJS.AES.encrypt(req.body.password, process.env.SECRET).toString();
-        const createUserQuery = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-
-        try {
-            await db.query(createUserQuery, [req.body.username, req.body.email, encryptedPassword]);
-            res.status(201).json({ status: true, message: "User created successfully" });
-        } catch (error) {
-            console.log(error);
-            res.status(500).json({ status: false, message: error.message });
-        }
-    },
-
-    loginUser: async (req, res) => {
-        try {
-            // Retrieve user using raw SQL
-            const findUserQuery = 'SELECT * FROM users WHERE email = ?';
-            const [user] = await db.query(findUserQuery, [req.body.email]);
-            if (!user || user.length === 0) {
-                return res.status(401).json({ status: false, message: 'Wrong Email Address' });
+        // التحقق من كلمة المرور
+        bcrypt.compare(password, user.password, (err, match) => {
+            if (err || !match) {
+                return res.status(401).json({ message: 'Invalid username or password' });
             }
 
-            const decryptedPass = CryptoJS.AES.decrypt(user[0].password, process.env.SECRET);
-            const decryptedPassword = decryptedPass.toString(CryptoJS.enc.Utf8);
-
-            if (decryptedPassword !== req.body.password) {
-                return res.status(401).json({ status: false, message: 'Provide a correct password' });
-            }
-
-            const userToken = jwt.sign(
-                {
-                    id: user[0].id,
-                    username: user[0].username,
-                },
-                process.env.JWT_SECRET,
-                { expiresIn: '21d' }
+            // تعديل الـ token لتضمين username
+            const token = jwt.sign(
+                { id: user.id, username: user.username, role: user.role }, // تضمين username هنا
+                '789',
+                { expiresIn: '1h' }
             );
 
-            const { password, createdAt, updatedAt, ...others } = user[0];
+            // تحديث أو إدخال التوكن في قاعدة البيانات
+            Token.updateOrInsert(user.username, token, (updateError) => {
+                if (updateError) {
+                    return res.status(500).json({ message: 'Error saving token' });
+                }
 
-            res.status(200).json({ ...others, userToken });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ status: false, error: error.message });
+                res.json({ token });
+            });
+        });
+    });
+};
+// طلب إعادة تعيين كلمة المرور
+exports.requestPasswordReset = (req, res) => {
+    const { username } = req.body; // استخدام اسم المستخدم بدلاً من البريد الإلكتروني
+
+    User.findByUsername(username, (error, results) => {
+        if (error || results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
         }
-    },
+
+        const user = results[0];
+        const token = crypto.randomBytes(20).toString('hex');
+
+        Token.updateOrInsert(user.username, token, (tokenError) => {
+            if (tokenError) {
+                return res.status(500).json({ message: 'Error saving reset token' });
+            }
+
+
+            const mailOptions = {
+                from: 's12027619@stu.najah.edu',
+                to: user.email,
+                subject: 'Password Reset',
+                html: `Click <a href="http://your-app.com/reset-password/${token}">here</a> to reset your password. Your token is: <strong>${token}</strong>` // استخدام HTML للتنسيق
+            };
+
+            transporter.sendMail(mailOptions, (err) => {
+                if (err) {
+                    return res.status(500).json({ message: 'Error sending email' });
+                }
+
+                res.json({ message: 'Reset link sent to email' });
+            });
+        });
+    });
+};
+
+
+exports.resetPassword = (req, res) => {
+    const { token, newPassword } = req.body;
+
+    Token.findByToken(token, (tokenError, tokenResults) => {
+        if (tokenError || tokenResults.length === 0) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+
+        const username = tokenResults[0].username; // الحصول على اسم المستخدم
+
+        // تشفير كلمة المرور الجديدة
+        bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
+            if (err) {
+                console.error(err); // طباعة الخطأ في وحدة التحكم
+                return res.status(500).json({ message: 'Error hashing password' });
+            }
+
+            // تأكد من استخدام username هنا
+            User.updatePassword(username, hashedPassword, (updateError) => {
+                if (updateError) {
+                    console.error(updateError); // طباعة الخطأ في وحدة التحكم
+                    return res.status(500).json({ message: 'Error updating password' });
+                }
+
+                // حذف الرمز بعد استخدامه
+                Token.deleteByToken(token, (deleteError) => {
+                    if (deleteError) {
+                        console.error(deleteError); // طباعة الخطأ في وحدة التحكم
+                        return res.status(500).json({ message: 'Error deleting reset token' });
+                    }
+
+                    res.json({ message: 'Password updated successfully' });
+                });
+            });
+        });
+    });
 };
