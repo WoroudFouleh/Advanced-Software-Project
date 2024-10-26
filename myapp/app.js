@@ -11,6 +11,8 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
 const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
+const cartRoutes = require('./routes/cartRoutes'); // استيراد مسارات السلة
+
 
 app.use(express.json()); // To handle JSON requests
 
@@ -38,6 +40,8 @@ app.use('/api/statistics', statisticsRoutes);
 console.log("statistics Routes Loaded"); 
 app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount levels routes
 app.use('/api/user-points-history', userPointsHistoryRoutes)
+
+app.use('/api', cartRoutes); // ربط مسارات السلة
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

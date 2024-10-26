@@ -9,7 +9,7 @@ const checkPermissions = (req, res, next) => {
     }
 
     // إزالة كلمة "Bearer " إذا كانت موجودة
-    const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token; // تأكد من تعريف المتغير هنا
+    const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token;
 
     jwt.verify(tokenWithoutBearer, '789', (err, user) => {
         if (err) {
@@ -17,16 +17,16 @@ const checkPermissions = (req, res, next) => {
             return res.status(403).send("Invalid token.");
         }
 
-        console.log(user); // إضافة هذا السطر للتحقق من بيانات المستخدم
+        console.log(user); // عرض بيانات المستخدم
         req.user = user;
 
         // تحقق من صلاحيات المستخدم
         if (user.role === 'admin') {
-            next();
+            next(); // السماح للمدير بالوصول إلى جميع المسارات
         } else if (user.role === 'owner') {
             // صلاحيات الـ owner
             if (req.path.startsWith('/api/user-points-history')) {
-                return res.status(403).send("You do not have permission to access statistics.");
+                return res.status(403).send("You do not have permission to access user points history.");
             }
             if (req.path === '/users') {
                 return res.status(403).send("You do not have permission to view users.");
@@ -35,7 +35,7 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You do not have permission to access statistics.");
             }
             if (req.path.startsWith('/api/discount-levels')) {
-                return res.status(403).send("You do not have permission to access statistics.");
+                return res.status(403).send("You do not have permission to access discount levels.");
             }
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
@@ -62,16 +62,24 @@ const checkPermissions = (req, res, next) => {
             }
         } else if (user.role === 'user') {
             // صلاحيات الـ user
-            if (req.path.startsWith('/api/user-points-history')) {
+
+            // السماح بالوصول إلى مسارات السلة
+            if (req.path.startsWith('/cart')) {
                 next();
             }
-            if (req.path.startsWith('/api/statistics')) {
+            // السماح بالوصول إلى تاريخ نقاط المستخدم
+            else if (req.path.startsWith('/api/user-points-history')) {
+                next();
+            }
+            // منع الوصول إلى الإحصائيات ومستويات الخصم
+            else if (req.path.startsWith('/api/statistics')) {
                 return res.status(403).send("You do not have permission to access statistics.");
             }
-            if (req.path.startsWith('/api/discount-levels')) {
-                return res.status(403).send("You do not have permission to access statistics.");
+            else if (req.path.startsWith('/api/discount-levels')) {
+                return res.status(403).send("You do not have permission to access discount levels.");
             }
-            if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
+            // السماح بالوصول إلى العناصر والملف الشخصي والحجوزات
+            else if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {
                 next();
