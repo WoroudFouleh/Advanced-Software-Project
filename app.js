@@ -9,6 +9,7 @@ const rentalPeriodRoutes= require('./routes/rentalRoutes')
 const bookingRoutes = require('./routes/bookingRoutes');
 const pricingRulesRoute = require('./routes/pricingRulesRoute');
 const seasonRoutes = require('./routes/seasonRoutes');
+require('./cronJobs');
 const app = express();
 app.use(express.json());
 

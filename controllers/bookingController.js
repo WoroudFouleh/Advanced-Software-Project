@@ -7,7 +7,6 @@ function calculateTotalPrice(startDate, endDate, basePricePerHour, basePricePerD
     const durationInHours = Math.ceil((end - start) / (1000 * 60 * 60)); // مدة الإيجار بالساعات
     const durationInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)); // مدة الإيجار بالأيام
 
-    // حساب السعر بناءً على الساعات أو الأيام
     let totalPrice = 0;
     if (durationInDays > 1) {
         totalPrice = durationInDays * basePricePerDay;
@@ -17,7 +16,7 @@ function calculateTotalPrice(startDate, endDate, basePricePerHour, basePricePerD
     return totalPrice;
 }
 
-// دالة لإنشاء حجز مع حساب السعر الإجمالي
+// دالة إنشاء حجز مع حساب السعر الإجمالي والتحقق من التداخل
 const createBooking = (req, res) => {
     const itemId = req.body.item_id || null;
     const userId = req.body.user_id || null;
@@ -29,7 +28,6 @@ const createBooking = (req, res) => {
     console.log("start_date:", startDate);
     console.log("end_date:", endDate);
 
-    // تحقق مما إذا كان هناك حجز متداخل
     const checkQuery = `
         SELECT * FROM bookings 
         WHERE item_id = ? 
@@ -43,19 +41,15 @@ const createBooking = (req, res) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length > 0) return res.status(400).send("Booking already exists for this item in the selected time period.");
 
-        // الحصول على سعر العنصر من قاعدة البيانات
         const query = 'SELECT basePricePerHour, basePricePerDay FROM items WHERE id = ?';
         db.execute(query, [itemId], (error, results) => {
             if (error) return res.status(500).send("Database error.");
             if (results.length === 0) return res.status(404).send("Item not found.");
 
-            const { basePricePerHour, basePricePerDay } = results[0]; // استخدم الأسماء الصحيحة هنا
-            
-            // طباعة الأسعار للتأكد
+            const { basePricePerHour, basePricePerDay } = results[0];
             console.log("Base Price Per Hour:", basePricePerHour);
             console.log("Base Price Per Day:", basePricePerDay);
-            
-            // تحقق من أن الأسعار ليست undefined
+
             if (basePricePerHour === undefined || basePricePerDay === undefined) {
                 return res.status(500).send("Price information is missing for the item.");
             }
@@ -71,134 +65,48 @@ const createBooking = (req, res) => {
     });
 };
 
-// دالة لاسترجاع جميع حجوزات اليوزر أو المالك
+// دالة استرجاع جميع الحجوزات
 const getAllBookings = (req, res) => {
-    const username = req.user.username;  // اسم المستخدم
-    const role = req.user.role;  // دور المستخدم (User أو Owner)
+    if (req.user.role !== 'admin') return res.status(403).send("Access denied.");
 
-    let query;
-    let params;
-
-    if (role === 'user') {
-        // جلب الحجوزات التي قام بها المستخدم
-        query = 'SELECT * FROM bookings WHERE user_id = ?';
-        params = [username];
-    } else if (role === 'owner') {
-        // جلب الحجوزات المرتبطة بممتلكات المالك باستخدام username
-        query = `
-            SELECT b.* FROM bookings b
-            JOIN items i ON b.item_id = i.id
-            WHERE i.username = ?
-        `;
-        params = [username];
-    } else {
-        return res.status(403).send("Access denied.");
-    }
-
-    db.execute(query, params, (error, results) => {
+    const query = 'SELECT * FROM bookings';
+    db.execute(query, (error, results) => {
         if (error) return res.status(500).send("Database error.");
         res.status(200).json(results);
     });
 };
 
-// دالة لاسترجاع حجز معين (اليوزر أو المالك)
+// دالة استرجاع حجز معين حسب معرفه
 const getBookingById = (req, res) => {
     const bookingId = req.params.id;
-    const username = req.user.username;  // اسم المستخدم
-    const role = req.user.role;  // دور المستخدم
 
-    let query;
-    let params;
-
-    if (role === 'user') {
-        // اليوزر يسترجع حجز يخصه فقط
-        query = 'SELECT * FROM bookings WHERE id = ? AND user_id = ?';
-        params = [bookingId, username];
-    } else if (role === 'owner') {
-        // المالك يسترجع حجز مرتبط بممتلكاته باستخدام username
-        query = `
-            SELECT b.* FROM bookings b
-            JOIN items i ON b.item_id = i.id
-            WHERE b.id = ? AND i.username = ?
-        `;
-        params = [bookingId, username];
-    } else {
-        return res.status(403).send("Access denied.");
-    }
-
-    db.execute(query, params, (error, results) => {
+    const query = 'SELECT * FROM bookings WHERE id = ?';
+    db.execute(query, [bookingId], (error, results) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length === 0) return res.status(404).send("Booking not found.");
         res.status(200).json(results[0]);
     });
 };
 
-// دالة لتحديث حجز (اليوزر أو المالك)
+// دالة تحديث حجز معين
 const updateBooking = (req, res) => {
     const bookingId = req.params.id;
-    const username = req.user.username;
-    const role = req.user.role;
-    const { startDate, endDate } = req.body;
+    const { start_date, end_date } = req.body;
 
-    let query;
-    let params;
-
-    if (role === 'user') {
-        // اليوزر يحدث حجوزاته فقط
-        query = 'SELECT * FROM bookings WHERE id = ? AND user_id = ?';
-        params = [bookingId, username];
-    } else if (role === 'owner') {
-        // المالك يحدث الحجوزات المرتبطة بممتلكاته باستخدام username
-        query = `
-            SELECT b.* FROM bookings b
-            JOIN items i ON b.item_id = i.id
-            WHERE b.id = ? AND i.username = ?
-        `;
-        params = [bookingId, username];
-    } else {
-        return res.status(403).send("Access denied.");
-    }
-
-    db.execute(query, params, (error, results) => {
+    const query = 'UPDATE bookings SET start_date = ?, end_date = ? WHERE id = ?';
+    db.execute(query, [start_date, end_date, bookingId], (error, results) => {
         if (error) return res.status(500).send("Database error.");
-        if (results.length === 0) return res.status(404).send("Booking not found or unauthorized.");
-
-        // الآن نقوم بتحديث الحجز
-        const updateQuery = 'UPDATE bookings SET start_date = ?, end_date = ? WHERE id = ?';
-        db.execute(updateQuery, [startDate, endDate, bookingId], (error) => {
-            if (error) return res.status(500).send("Error updating booking.");
-            res.status(200).send("Booking updated successfully.");
-        });
+        res.status(200).send("Booking updated successfully.");
     });
 };
 
-// دالة لحذف حجز (اليوزر أو المالك)
+// دالة حذف حجز معين
 const deleteBooking = (req, res) => {
     const bookingId = req.params.id;
-    const username = req.user.username;
-    const role = req.user.role;
 
-    let query;
-    let params;
-
-    if (role === 'user') {
-        // اليوزر يحذف حجوزاته فقط
-        query = 'DELETE FROM bookings WHERE id = ? AND user_id = ?';
-        params = [bookingId, username];
-    } else if (role === 'owner') {
-        // المالك يحذف الحجوزات المرتبطة بممتلكاته باستخدام username
-        query = `
-            DELETE b FROM bookings b
-            JOIN items i ON b.item_id = i.id
-            WHERE b.id = ? AND i.username = ?
-        `;
-        params = [bookingId, username];
-    } else {
-        return res.status(403).send("Access denied.");
-    }
-
-    db.execute(query, params, (error) => {
-        if (error) return res.status(500).send("Error deleting booking.");
+    const query = 'DELETE FROM bookings WHERE id = ?';
+    db.execute(query, [bookingId], (error, results) => {
+        if (error) return res.status(500).send("Database error.");
         res.status(200).send("Booking deleted successfully.");
     });
 };
