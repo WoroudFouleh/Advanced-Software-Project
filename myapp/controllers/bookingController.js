@@ -344,6 +344,54 @@ const deleteBooking = (req, res) => {
     
 };
 
+// دالة لحساب إحصائيات الحجز
+const getBookingStatistics = (req, res) => {
+    const query = `
+        SELECT 
+            DATE(start_date) AS booking_date, 
+            COUNT(*) AS booking_count 
+        FROM bookings 
+        GROUP BY booking_date
+        ORDER BY booking_date DESC
+    `;
+
+    db.execute(query, (error, dailyResults) => {
+        if (error) return res.status(500).send("Database error.");
+
+        const monthlyQuery = `
+            SELECT 
+                DATE_FORMAT(start_date, '%Y-%m') AS booking_month, 
+                COUNT(*) AS booking_count 
+            FROM bookings 
+            GROUP BY booking_month
+            ORDER BY booking_month DESC
+        `;
+
+        db.execute(monthlyQuery, (error, monthlyResults) => {
+            if (error) return res.status(500).send("Database error.");
+
+            const yearlyQuery = `
+                SELECT 
+                    YEAR(start_date) AS booking_year, 
+                    COUNT(*) AS booking_count 
+                FROM bookings 
+                GROUP BY booking_year
+                ORDER BY booking_year DESC
+            `;
+
+            db.execute(yearlyQuery, (error, yearlyResults) => {
+                if (error) return res.status(500).send("Database error.");
+
+                res.status(200).json({
+                    dailyBookings: dailyResults,
+                    monthlyBookings: monthlyResults,
+                    yearlyBookings: yearlyResults
+                });
+            });
+        });
+    });
+};
+
 // تصدير الدوال
 module.exports = {
     createBooking,
@@ -351,4 +399,5 @@ module.exports = {
     getBookingById,
     updateBooking,
     deleteBooking,
+    getBookingStatistics,
 };

@@ -18,4 +18,7 @@ router.put('/updateBooking/:id', checkPermissions, BookingController.updateBooki
 // حذف حجز
 router.delete('/deleteBooking/:id', checkPermissions, BookingController.deleteBooking);
 
+router.get('/users/booking/statistics',checkPermissions, BookingController.getBookingStatistics);
+
+
 module.exports = router;

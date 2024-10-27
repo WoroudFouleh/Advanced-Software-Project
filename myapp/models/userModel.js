@@ -37,7 +37,6 @@ const User = {
     },
     
     update2: (userId, updates, callback) => {
-        // إعداد استعلام SQL مع استخدام COALESCE للحفاظ على القيم القديمة إذا لم يتم تقديم قيمة جديدة
         const query = `
             UPDATE users 
             SET 
@@ -49,10 +48,9 @@ const User = {
     
         const values = [updates.username || null, updates.password || null, updates.role || null, userId];
     
-        // تنفيذ الاستعلام
         db.query(query, values, (error, results) => {
             if (error) {
-                console.error('Error executing query:', error); // طباعة الخطأ في التيرمنال
+                console.error('Error executing query:', error);
                 return callback(error);
             }
             callback(null, results);
@@ -67,7 +65,6 @@ const User = {
         const query = 'UPDATE users SET password = ? WHERE username = ?';
         db.query(query, [hashedPassword, username], callback);
     },
-
     
     findByRoleOrUsername: (searchTerm, callback) => {
         const query = 'SELECT * FROM users WHERE role = ? OR username = ?';
@@ -76,32 +73,24 @@ const User = {
     findById: (userId, callback) => {
         const query = 'SELECT * FROM users WHERE id = ?';
         db.query(query, [userId], callback);
-        exports.update = (userId, updates, callback) => {
-            // إعداد استعلام SQL مع استخدام COALESCE للحفاظ على القيم القديمة إذا لم يتم تقديم قيمة جديدة
-            const query = `
-                UPDATE users 
-                SET 
-                    username = COALESCE(?, username), 
-                    password = COALESCE(?, password), 
-                    role = COALESCE(?, role),
-                    email = COALESCE(?, email),
-                    reward_points = COALESCE(?, reward_points)
+    },
 
-                WHERE id = ?
-            `;
-        
-            const values = [updates.username, updates.password, updates.role, userId];
-        
-            // تنفيذ الاستعلام
-            db.query(query, values, (error, results) => {
-                if (error) {
-                    console.error('Error executing query:', error); // طباعة الخطأ في التيرمنال
-                    return callback(error);
-                }
-                callback(null, results);
-            });
-        };    }
+    getRoleCounts: (callback) => {
+        const query = `
+            SELECT 
+                COUNT(*) AS total,
+                SUM(role = 'admin') AS admin,
+                SUM(role = 'owner') AS owner,
+                SUM(role = 'user') AS regularUser,
+                SUM(role = 'delivery') AS delivery
+            FROM users;
+        `;
+
+        db.query(query, (error, results) => {
+            if (error) return callback(error, null);
+            callback(null, results[0]);
+        });
+    }
 };
-
 
 module.exports = User;

@@ -133,3 +133,27 @@ exports.deleteOwnAccount = (req, res) => {
         res.json({ message: 'Account deleted successfully' });
     });
 };
+
+// controllers/userController.js
+exports.getUserRolePercentages = (req, res) => {
+    User.getRoleCounts((error, results) => {
+        if (error) {
+            console.error('Error fetching role counts:', error);
+            return res.status(500).json({ message: 'Error fetching role counts' });
+        }
+
+        const total = results.total;
+        const adminPercentage = (results.admin / total) * 100;
+        const ownerPercentage = (results.owner / total) * 100;
+        const regularUserPercentage = (results.regularUser / total) * 100;
+        const deliveryPercentage = (results.delivery / total) * 100;
+
+        res.json({
+            total,
+            adminPercentage,
+            ownerPercentage,
+            regularUserPercentage,
+            deliveryPercentage
+        });
+    });
+};
