@@ -20,11 +20,36 @@ const checkPermissions = (req, res, next) => {
         console.log(user); // إضافة هذا السطر للتحقق من بيانات المستخدم
         req.user = user;
 
+        console.log("Path:", req.path); // يعرض المسار في وحدة التحكم
+    console.log("User Role:", req.user.role); // يعرض الدور للتحقق منه
+    
+    if (req.path === '/messages/sendReply') {
+        return next();
+    }
         // تحقق من صلاحيات المستخدم
         if (user.role === 'admin') {
-            next();
+            if (req.path.startsWith('/messages')) {
+                return res.status(403).send("Admin does not have access to messages.");
+            }
+            else{
+                next();
+            }
         } else if (user.role === 'owner') {
             // صلاحيات الـ owner
+            if (req.path.startsWith('/messages')&& req.method === 'POST' ) {
+                const { receiverRole } = req.body;
+                if (receiverRole === 'user') {
+                    return next();
+                }
+                return res.status(403).send("You can only message users.");
+            }
+            
+
+            if (req.path.startsWith('/messages')&& req.method === 'GET' ) {
+                
+                    return next();
+                
+            }
             if (req.path.startsWith('/api/user-points-history')) {
                 return res.status(403).send("You do not have permission to access statistics.");
             }
@@ -62,6 +87,20 @@ const checkPermissions = (req, res, next) => {
             }
         } else if (user.role === 'user') {
             // صلاحيات الـ user
+            if (req.path.startsWith('/messages/send') && req.method === 'POST') {
+                const { receiverRole } = req.body;
+                if (receiverRole === 'owner' || receiverRole === 'delivery') {
+                    return next();
+                }
+                return res.status(403).send("You can only message owners or delivery.");
+            }
+            
+
+            if (req.path.startsWith('/messages') && req.method === 'GET') {
+                
+                    return next();
+                
+            }
             if (req.path.startsWith('/api/user-points-history')) {
                 next();
             }
