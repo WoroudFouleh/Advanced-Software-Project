@@ -21,7 +21,8 @@ const checkPermissions = (req, res, next) => {
         if (userRole === 'admin') {
             console.log("Access granted: Admin has full permissions.");
             next();
-        } else if (userRole === 'owner') {
+        } 
+        else if (userRole === 'owner') {
            
             if (req.path === '/users') {
                 return res.status(403).send("You do not have permission to perform this action.");
