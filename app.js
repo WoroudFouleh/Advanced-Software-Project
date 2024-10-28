@@ -9,7 +9,7 @@ const rentalPeriodRoutes= require('./routes/rentalRoutes')
 const bookingRoutes = require('./routes/bookingRoutes');
 const pricingRulesRoute = require('./routes/pricingRulesRoute');
 const notificationsRoutes = require('./routes/notificationsRoutes');
-const discountConditionsRoutes = require('./routes/discountConditions');
+const discountRoutes = require('./routes/discountRoutes');
 
 
 const seasonRoutes = require('./routes/seasonRoutes');
@@ -43,7 +43,7 @@ console.log("Booking Routes Loaded");
 app.use('/api/season', seasonRoutes);
 console.log("season Routes Loaded"); 
 
-app.use('/api', discountConditionsRoutes);
+app.use('/api', discountRoutes);
 
 app.use('/api', pricingRulesRoute)
 console.log("Pricing Rules Routes Loaded");
