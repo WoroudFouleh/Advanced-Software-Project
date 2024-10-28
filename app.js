@@ -8,6 +8,8 @@ const itemRoutes = require('./routes/itemRoutes'); // This should be the correct
 const rentalPeriodRoutes= require('./routes/rentalRoutes')
 const bookingRoutes = require('./routes/bookingRoutes');
 const pricingRulesRoute = require('./routes/pricingRulesRoute');
+const notificationsRoutes = require('./routes/notificationsRoutes');
+
 
 
 const seasonRoutes = require('./routes/seasonRoutes');
@@ -44,6 +46,8 @@ console.log("season Routes Loaded");
 
 app.use('/api', pricingRulesRoute)
 console.log("Pricing Rules Routes Loaded");
+
+app.use('/api/notifications', notificationsRoutes);
 // تحديد منفذ الاستماع للخادم
 const port = process.env.PORT || 8008;
 

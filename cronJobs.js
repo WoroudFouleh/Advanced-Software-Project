@@ -4,19 +4,7 @@ const db = require('./db'); // تأكد أن المسار إلى قاعدة ال
 
 // جدولة المهمة لحذف الحجوزات القديمة وتحديث حالة القطع
 const job = new cron.CronJob('0 0 * * *', () => { // تنفذ يوميًا عند منتصف الليل
-    // حذف الحجوزات القديمة
-    const deleteQuery = `
-        DELETE FROM bookings 
-        WHERE end_date < NOW()
-    `;
-
-    db.execute(deleteQuery, (error) => {
-        if (error) {
-            console.error("Error deleting expired bookings:", error);
-            return;
-        }
-        console.log("Expired bookings deleted successfully.");
-    });
+    console.log("Running scheduled job for updating item statuses and deleting expired bookings...");
 
     // تحديث حالة القطع لتكون متاحة للحجز مجددًا
     const updateItemStatusQuery = `
@@ -29,12 +17,26 @@ const job = new cron.CronJob('0 0 * * *', () => { // تنفذ يوميًا عن�
         )
     `;
 
-    db.execute(updateItemStatusQuery, (error) => {
+    db.execute(updateItemStatusQuery, (error, result) => {
         if (error) {
             console.error("Error updating item status:", error);
             return;
         }
-        console.log("Item statuses updated to 'available' for expired bookings.");
+        console.log("Item statuses updated to 'available' for expired bookings:", result.affectedRows);
+    });
+
+    // حذف الحجوزات القديمة
+    const deleteQuery = `
+        DELETE FROM bookings 
+        WHERE end_date < NOW()
+    `;
+
+    db.execute(deleteQuery, (error) => {
+        if (error) {
+            console.error("Error deleting expired bookings:", error);
+            return;
+        }
+        console.log("Expired bookings deleted successfully.");
     });
 });
 

@@ -4,6 +4,25 @@ exports.createPricingRule = async (req, res) => {
         const pricingData = req.body;
         const user = req.user;
 
+        if (!user || !user._id) {
+            return res.status(403).json({ message: "User not authorized." });
+        }
+
+        pricingData.created_by = user._id;
+
+        const result = await PricingRule.create(pricingData);
+        res.status(201).json({ message: "Pricing rule created successfully", data: result });
+    } catch (error) {
+        res.status(500).json({ message: "Error creating pricing rule", error });
+    }
+};
+
+/*
+exports.createPricingRule = async (req, res) => {
+    try {
+        const pricingData = req.body;
+        const user = req.user;
+
         // تحقق من وجود معلومات المستخدم
         if (!user || !user._id) {
             console.error("User data is missing:", user);
@@ -20,7 +39,7 @@ exports.createPricingRule = async (req, res) => {
         res.status(500).json({ message: "Error creating pricing rule", error });
     }
 };
-
+*/
 
 exports.updatePricingRule = async (req, res) => {
     const { id } = req.params; // تأكد من أن هذا هو item_id الصحيح
