@@ -1,87 +1,56 @@
-const PricingRule = require("../models/pricingRulesModel");
-exports.createPricingRule = async (req, res) => {
-    try {
-        const pricingData = req.body;
-        const user = req.user;
+// pricingRulesController.js
+const pricingRulesModel = require('../models/pricingRulesModel');
 
-        if (!user || !user._id) {
-            return res.status(403).json({ message: "User not authorized." });
-        }
-
-        pricingData.created_by = user._id;
-
-        const result = await PricingRule.create(pricingData);
-        res.status(201).json({ message: "Pricing rule created successfully", data: result });
-    } catch (error) {
-        res.status(500).json({ message: "Error creating pricing rule", error });
-    }
+// إضافة قاعدة تسعير جديدة
+const createPricingRule = (req, res) => {
+    const newRule = req.body;
+    pricingRulesModel.createPricingRule(newRule, (err, result) => {
+        if (err) return res.status(500).send(err);
+        res.status(201).json({ id: result.insertId, ...newRule });
+    });
 };
 
-/*
-exports.createPricingRule = async (req, res) => {
-    try {
-        const pricingData = req.body;
-        const user = req.user;
-
-        // تحقق من وجود معلومات المستخدم
-        if (!user || !user._id) {
-            console.error("User data is missing:", user);
-            return res.status(403).json({ message: "User not authorized." });
-        }
-
-        // إضافة المستخدم إلى بيانات التسعير
-        pricingData.ownerId = user._id; // تأكد من وجود حقل ownerId في النموذج
-
-        const result = await PricingRule.create(pricingData);
-        res.status(201).json({ message: "Pricing rule created successfully", data: result });
-    } catch (error) {
-        console.error("Error creating pricing rule:", error);
-        res.status(500).json({ message: "Error creating pricing rule", error });
-    }
-};
-*/
-
-exports.updatePricingRule = async (req, res) => {
-    const { id } = req.params; // تأكد من أن هذا هو item_id الصحيح
-    const pricingData = req.body; // بيانات التسعير من الجسم
-    const user = req.user; // معلومات المستخدم
-
-    console.log("Updating pricing rule with item_id:", id); // سجل id المستخدم
-    console.log("New pricing data:", pricingData); // سجل البيانات الجديدة
-
-    try {
-        const result = await PricingRule.findByIdAndUpdate(id, pricingData, { new: true });
-        
-        // تحقق من نتيجة الاستعلام
-        if (!result) {
-            return res.status(404).json({ message: "No matching pricing rule found to update." });
-        }
-
-        res.status(200).json({ message: "Pricing rule updated successfully", data: result });
-    } catch (error) {
-        console.error("Error updating pricing rule:", error);
-        return res.status(500).json({ message: "Error updating pricing rule", error });
-    }
+// الحصول على جميع قواعد التسعير
+const getAllPricingRules = (req, res) => {
+    pricingRulesModel.getAllPricingRules((err, rules) => {
+        if (err) return res.status(500).send(err);
+        res.json(rules);
+    });
 };
 
-exports.getAllPricingRules = async (req, res) => {
-    try {
-        const user = req.user; // تأكد من أن المستخدم متاح هنا
-        let pricingRules;
+// الحصول على قاعدة تسعير واحدة
+const getPricingRuleById = (req, res) => {
+    const id = req.params.id;
+    pricingRulesModel.getPricingRuleById(id, (err, rule) => {
+        if (err) return res.status(500).send(err);
+        if (rule.length === 0) return res.status(404).send('Pricing rule not found');
+        res.json(rule[0]);
+    });
+};
 
-        if (user.role.toLowerCase() === 'admin') {
-            // إذا كان الإداري، احصل على جميع قواعد التسعير
-            pricingRules = await PricingRule.find({});
-        } else if (user.role.toLowerCase() === 'owner') {
-            // إذا كان المالك، احصل على قواعد التسعير الخاصة به
-            pricingRules = await PricingRule.find({ ownerId: user._id }); // تأكد من وجود حقل ownerId في النموذج
-        } else {
-            return res.status(403).send("Access denied.");
-        }
+// تحديث قاعدة التسعير
+const updatePricingRule = (req, res) => {
+    const id = req.params.id;
+    const updatedRule = req.body;
+    pricingRulesModel.updatePricingRule(id, updatedRule, (err) => {
+        if (err) return res.status(500).send(err);
+        res.send('Pricing rule updated successfully');
+    });
+};
 
-        return res.status(200).json(pricingRules);
-    } catch (error) {
-        console.error("Error fetching pricing rules:", error);
-        return res.status(500).send("Internal Server Error.");
-    }
+// حذف قاعدة تسعير
+const deletePricingRule = (req, res) => {
+    const id = req.params.id;
+    pricingRulesModel.deletePricingRule(id, (err) => {
+        if (err) return res.status(500).send(err);
+        res.send('Pricing rule deleted successfully');
+    });
+};
+
+module.exports = {
+    createPricingRule,
+    getAllPricingRules,
+    getPricingRuleById,
+    updatePricingRule,
+    deletePricingRule
 };

@@ -25,7 +25,7 @@ function getDiscountPercentage(userPoints, callback) {
 }
 
 
-
+/*
 // دالة لحساب السعر الكلي ورسوم المنصة
 function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay) {
     const start = new Date(startDate);
@@ -44,7 +44,7 @@ function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, base
 
     return { totalPrice, platformFee, totalRevenue, durationInHours };
 }
-
+*/
 // دالة لتحديث نقاط المستخدم
 function updateUserPoints(userId, bookingId, durationInHours) {
     const pointsPerHour = 5;
@@ -76,20 +76,20 @@ function updateUserPoints(userId, bookingId, durationInHours) {
         });
     });
 }
-const calculateTotalPrice = (item, rentalType, duration) => {
-    if (rentalType === 'daily') {
-        return item.basePricePerDay * duration;
-    } else if (rentalType === 'hourly') {
-        return item.basePricePerHour * duration;
-    }
-    return 0; // إذا لم يكن هناك نوع معروف
-};
+
 const createBooking = (req, res) => {
+    const itemQuery = 'SELECT basePricePerHour, basePricePerDay, owner_id, name FROM items WHERE id = ?';
+    const userQuery = 'SELECT name FROM users WHERE id = ?';
     const itemId = req.body.item_id || null;
     const userId = req.body.user_id || null;
     const startDate = req.body.start_date || null;
     const endDate = req.body.end_date || null;
+    const rentalType = req.body.rentalType || null; // إضافة حقل نوع الحجز
 
+    if (!['hourly', 'daily'].includes(rentalType)) {
+        return res.status(400).send("Invalid rental type. It must be 'hourly' or 'daily'.");
+    }
+    
     // التحقق مما إذا كان هناك حجز متداخل
     const checkQuery = `
         SELECT * FROM bookings 
@@ -110,7 +110,7 @@ const createBooking = (req, res) => {
         }
 
         // الحصول على سعر العنصر من قاعدة البيانات
-        const query = 'SELECT basePricePerHour, basePricePerDay, owner_id FROM items WHERE id = ?';
+    const query = 'SELECT basePricePerHour, basePricePerDay, owner_id FROM items WHERE id = ?';
         db.execute(query, [itemId], (error, itemResults) => {
             if (error) {
                 console.error("Database error during item price retrieval:", error);
@@ -121,9 +121,10 @@ const createBooking = (req, res) => {
             }
 
             const { basePricePerHour, basePricePerDay, owner_id: ownerId } = itemResults[0];
+            
 
             // حساب السعر الكلي، رسوم المنصة، والإيرادات الكلية ومدة الحجز بالساعات
-            const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay);
+            const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay, rentalType);
 
             // الحصول على نقاط المستخدم
             const userPointsQuery = 'SELECT reward_points FROM users WHERE id = ?';
@@ -145,16 +146,17 @@ const createBooking = (req, res) => {
                     const discountAmount = totalPrice * (discountPercentage / 100);
                     const discountedTotalPrice = totalPrice - discountAmount;
                     console.log({
-                        itemId,
-                        userId,
                         startDate,
                         endDate,
-                        discountedTotalPrice,
+                        basePricePerHour,
+                        basePricePerDay,
+                        rentalType,
+                        totalPrice,
                         platformFee,
                         totalRevenue,
-                        discountPercentage,
-                        discountAmount
+                        durationInHours
                     });
+                    
                     
                     // إدخال الحجز مع الخصم ورسوم المنصة والإيرادات في قاعدة البيانات
                     const insertQuery = `
@@ -162,29 +164,31 @@ const createBooking = (req, res) => {
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
                     const updateItemStatusQuery = `
-        UPDATE items SET status = 'محجوز' WHERE id = ?
-    `;
+                        UPDATE items SET status = 'available' WHERE id = ?
+                    `;
 
                     db.execute(insertQuery, [itemId, userId, startDate, endDate, discountedTotalPrice, platformFee, totalRevenue, discountPercentage, discountAmount], (error, result) => {
                         if (error) {
                             console.error("Error creating booking:", error);
                             return res.status(500).send("Error creating booking.");
                         }
+
+                        // تحديث حالة العنصر
                         db.execute(updateItemStatusQuery, [itemId], (updateError, updateResult) => {
-                            if (updateError) return callback(updateError);
-                
-                            callback(null, result); // إرجاع النتيجة أو أي شيء آخر تحتاجه
+                            if (updateError) {
+                                console.error("Error updating item status:", updateError);
+                                return res.status(500).send("Error updating item status.");
+                            }
                         });
+
                         const bookingId = result.insertId;
 
                         // تحديث نقاط المستخدم بعد إنشاء الحجز
                         updateUserPoints(userId, bookingId, durationInHours);
 
                         // إرسال الإشعار إلى المالك
-                       // إرسال الإشعار إلى المالك
-const notificationMessage = `User ${userId} has booked your item ${itemId} from ${startDate} to ${endDate}.`;
-sendNotificationToOwner(ownerId, notificationMessage, itemId, userId);
-
+                        const notificationMessage = `User ${userId} has booked your item ${itemId} from ${startDate} to ${endDate}.`;
+                        sendNotificationToOwner(ownerId, notificationMessage, itemId, userId);
 
                         res.status(201).json({
                             message: "Booking created successfully.",
@@ -200,7 +204,32 @@ sendNotificationToOwner(ownerId, notificationMessage, itemId, userId);
             });
         });
     });
-};const sendNotificationToOwner = (ownerId, message, itemId, userId) => {
+};
+
+// تحديث الدالة calculateTotalAndPlatformFee لتقبل rentalType
+function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay, rentalType) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const durationInHours = Math.abs(end - start) / 36e5; // تحويل المدة إلى ساعات
+
+    let totalPrice = 0;
+    if (rentalType === 'hourly') {
+        totalPrice = durationInHours * basePricePerHour;
+    } else if (rentalType === 'daily') {
+        const durationInDays = Math.ceil(durationInHours / 24); // التحويل إلى أيام
+        totalPrice = durationInDays * basePricePerDay;
+    }
+
+    // حساب رسوم المنصة وإيراداتها
+    const platformFee = totalPrice * 0.1; // على سبيل المثال، 10% رسوم منصة
+    const totalRevenue = totalPrice - platformFee;
+
+    return { totalPrice, platformFee, totalRevenue, durationInHours };
+}
+
+
+// دالة إرسال الإشعار إلى المالك
+const sendNotificationToOwner = (ownerId, message, itemId, userId) => {
     const insertNotificationQuery = `
         INSERT INTO notifications (user_id, item_id, message, created_at) 
         VALUES (?, ?, ?, NOW())

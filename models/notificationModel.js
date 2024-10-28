@@ -1,6 +1,6 @@
 // notificationModel.js
 
-const db = require('../db'); // تأكد من تعديل المسار حسب هيكل المشروع
+const db = require("../db");
 
 // دالة للحصول على الإشعارات بناءً على معرف المستخدم
 const getNotificationsByUserId = (userId, callback) => {

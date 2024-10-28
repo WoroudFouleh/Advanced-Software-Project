@@ -44,7 +44,12 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You can only message users.");
             }
             
-
+            if (req.method === 'POST' && req.path === '/add_pricing_rule') {
+                next();
+            }
+            if (req.method === 'GET' && req.path === '/list_pricing_rules') {
+                next();
+            }
             if (req.path.startsWith('/messages')&& req.method === 'GET' ) {
                 
                     return next();
