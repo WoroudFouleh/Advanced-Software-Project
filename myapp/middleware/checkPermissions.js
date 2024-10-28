@@ -127,7 +127,25 @@ const checkPermissions = (req, res, next) => {
             } else {
                 return res.status(403).send("You do not have permission to perform this action.");
             }
-        } else {
+        } else if(user.role === 'delivery'){
+             // صلاحيات الـ user
+             if (req.path.startsWith('/messages/send') && req.method === 'POST') {
+                const { receiverRole } = req.body;
+                if (receiverRole === 'user' ) {
+                    return next();
+                }
+                return res.status(403).send("You can only message users.");
+            }
+            
+
+            if (req.path.startsWith('/messages') && req.method === 'GET') {
+                
+                    return next();
+                
+            }
+        }
+        
+        else {
             return res.status(403).send("Invalid role.");
         }
     });

@@ -26,27 +26,47 @@ const Message = {
     getMessages: (userUsername1, userUsername2, callback) => {
         const queryUserId1 = 'SELECT id FROM users WHERE username = ?';
         const queryUserId2 = 'SELECT id FROM users WHERE username = ?';
-
-        // الحصول على معرف المستخدمين
+    
+        // الحصول على معرفات المستخدمين بناءً على أسماء المستخدمين
         db.query(queryUserId1, [userUsername1], (err, user1Result) => {
             if (err || user1Result.length === 0) return callback(err || new Error('User 1 not found'));
-
+    
             const userId1 = user1Result[0].id;
-
+    
             db.query(queryUserId2, [userUsername2], (err, user2Result) => {
                 if (err || user2Result.length === 0) return callback(err || new Error('User 2 not found'));
-
+    
                 const userId2 = user2Result[0].id;
                 const query = `
-                    SELECT * FROM messages
-                    WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-                    ORDER BY timestamp ASC
+                    SELECT m.id, m.message, m.timestamp, m.reply_to_message_id, 
+                           sender.username AS sender_username, 
+                           receiver.username AS receiver_username
+                    FROM messages m
+                    JOIN users sender ON m.sender_id = sender.id
+                    JOIN users receiver ON m.receiver_id = receiver.id
+                    WHERE (m.sender_id = ? AND m.receiver_id = ?) 
+                       OR (m.sender_id = ? AND m.receiver_id = ?)
+                    ORDER BY m.timestamp ASC
                 `;
-                db.query(query, [userId1, userId2, userId2, userId1], callback);
+    
+                db.query(query, [userId1, userId2, userId2, userId1], (err, results) => {
+                    if (err) return callback(err);
+    
+                    // تنقيح النتائج لحذف reply_to_message_id إذا كانت null
+                    const filteredResults = results.map(message => {
+                        if (message.reply_to_message_id === null) {
+                            const { reply_to_message_id, ...rest } = message; // إزالة reply_to_message_id
+                            return rest; // إعادة الكائن بدون reply_to_message_id
+                        }
+                        return message; // إعادة الكائن كما هو إذا كانت القيمة غير null
+                    });
+    
+                    callback(null, filteredResults);
+                });
             });
         });
     },
-
+    
     sendReply: (senderUsername, receiverUsername, message, replyToMessageId, callback) => {
         const querySenderId = 'SELECT id FROM users WHERE username = ?';
         const queryReceiverId = 'SELECT id FROM users WHERE username = ?';
