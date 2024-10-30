@@ -32,7 +32,7 @@ exports.createItem = (itemData, callback) => {
     );
 };
 
-// دالة لاسترجاع جميع العناصر
+
 exports.getAllItems = (callback) => {
   const query = 'SELECT * FROM items';
 

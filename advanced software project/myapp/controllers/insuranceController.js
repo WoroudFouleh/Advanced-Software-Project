@@ -12,6 +12,7 @@ const getAllInsurance = async (req, res) => {
     }
 };
 
+
 // Controller to delete an insurance record by ID
 const deleteInsuranceById = async (req, res) => {
     const { id } = req.body; // Getting id from request body
@@ -32,9 +33,29 @@ const deleteInsuranceById = async (req, res) => {
         console.error("Error deleting insurance record:", error);
         res.status(500).send("Server error");
     }
+}; 
+const getInsuranceByUserId = async (req, res) => {
+    const { user_id } = req.params; // Getting user_id from request parameters
+
+    if (!user_id) {
+        return res.status(400).send("User ID is required to fetch insurance records.");
+    }
+
+    try {
+        const insuranceRecords = await insuranceModel.getInsuranceByUserId(user_id);
+
+        if (insuranceRecords.length === 0) {
+            return res.status(404).send("No insurance records found for the provided user ID.");
+        }
+        res.status(200).json(insuranceRecords);
+    } catch (error) {
+        console.error("Error fetching insurance records for user:", error);
+        res.status(500).send("Server error");
+    }
 };
 
 module.exports = {
     getAllInsurance,
-    deleteInsuranceById
+    deleteInsuranceById,
+    getInsuranceByUserId
 };

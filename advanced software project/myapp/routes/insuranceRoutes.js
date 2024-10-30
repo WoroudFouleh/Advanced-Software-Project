@@ -6,7 +6,7 @@ const insuranceController = require('../controllers/insuranceController'); // Ad
 
 // Route to get all insurance records
 router.get('/insurance', checkPermissions,insuranceController.getAllInsurance);
-
+router.get('/insurance/:user_id', checkPermissions,insuranceController.getInsuranceByUserId);
 // Route to delete an insurance record by ID
 router.delete('/insurance',checkPermissions, insuranceController.deleteInsuranceById);
 

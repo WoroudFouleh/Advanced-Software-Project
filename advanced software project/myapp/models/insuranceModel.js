@@ -7,7 +7,11 @@ const getAllInsurance = async () => {
     const [results] = await db.execute(query);
     return results;
 };
-
+const getInsuranceByUserId = async (user_id) => {
+    const query = 'SELECT * FROM insurance WHERE user_id = ?';
+    const [rows] = await db.execute(query, [user_id]);
+    return rows;
+};
 // Delete insurance record by ID
 const deleteInsuranceById = async (id) => {
     const query = 'DELETE FROM insurance WHERE id = ?';
@@ -17,5 +21,6 @@ const deleteInsuranceById = async (id) => {
 
 module.exports = {
     getAllInsurance,
-    deleteInsuranceById
+    deleteInsuranceById,
+    getInsuranceByUserId
 };
