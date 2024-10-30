@@ -10,6 +10,7 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
 const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
+const insuranceRoutes = require('./routes/insuranceRoutes');
 const app = express();
 app.use(express.json());
 
@@ -26,7 +27,7 @@ app.use('/auth1', authRoute);
 console.log("User Route Loaded");
 app.use('/api', itemRoutes);
 app.use('/api2', userRoutes); // ربط المسارات
-
+app.use('/api', insuranceRoutes);
 console.log("Item Routes Loaded");
 app.use('/api', bookingRoutes);
 console.log("Booking Routes Loaded"); 

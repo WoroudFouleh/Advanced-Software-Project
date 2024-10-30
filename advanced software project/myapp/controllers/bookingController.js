@@ -1,5 +1,6 @@
 const db = require('../db');
-
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); 
 // دالة للحصول على نسبة الخصم بناءً على نقاط المستخدم
 async function getDiscountPercentage(userPoints) {
     try {
@@ -73,40 +74,13 @@ async function updateUserPoints(userId, bookingId, durationInHours) {
         console.error("Error updating user points or inserting points history:", error);
     }
 }
-
-
-
-
 const createBooking = async (req, res) => {
     try {
         const itemId = req.body.item_id || null;
         const userId = req.body.user_id || null;
         const startDate = req.body.start_date || null;
         const endDate = req.body.end_date || null;
-        const idNumber = req.body.id_number || null; // Use the ID number from the request body
-        const isValidIdNumber = (idNumber) => {
-            // Check if idNumber is defined and not null or empty, then trim and test against regex
-            if (typeof idNumber === 'string' && idNumber.trim() !== '') {
-                const isValid = /^PAL\d{4}$/.test(idNumber.trim());
-                return isValid;
-            }
-            return false; // Return false for any undefined, null, or empty string
-        };
-
-if (isValidIdNumber(idNumber)) {
-    console.log("Valid ID number format.");
-} else {
-    return res.status(400).send("Invalid ID number");
-}
-
-const checkInsuranceQuery = `
-SELECT * FROM insurance WHERE Idnumber = ?
-`;
-const [insuranceResults] = await db.execute(checkInsuranceQuery, [idNumber]);
-
-if (insuranceResults.length > 0) {
-return res.status(400).send("Invalid ID number: ID number already exists in the insurance table.");
-}
+        const imageurl = req.body.imageurl || null;
 
         // Check for overlapping bookings
         const checkQuery = `
@@ -123,20 +97,18 @@ return res.status(400).send("Invalid ID number: ID number already exists in the 
             return res.status(400).send("Booking already exists for this item in the selected time period.");
         }
 
-        // Get item price details from the database
-        const query = 'SELECT basePricePerHour, basePricePerDay FROM items WHERE id = ?';
-        const [itemResults] = await db.execute(query, [itemId]);
+        // Fetch item details
+        const itemQuery = 'SELECT basePricePerHour, basePricePerDay, category FROM items WHERE id = ?';
+        const [itemResults] = await db.execute(itemQuery, [itemId]);
 
         if (itemResults.length === 0) {
             return res.status(404).send("Item not found.");
         }
 
-        const { basePricePerHour, basePricePerDay } = itemResults[0];
-
-        // Calculate total price, platform fee, total revenue, and booking duration in hours
+        const { basePricePerHour, basePricePerDay, category } = itemResults[0];
         const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay);
 
-        // Get user points
+        // Fetch user reward points
         const userPointsQuery = 'SELECT reward_points FROM users WHERE id = ?';
         const [userResults] = await db.execute(userPointsQuery, [userId]);
 
@@ -145,15 +117,11 @@ return res.status(400).send("Invalid ID number: ID number already exists in the 
         }
 
         const userPoints = userResults[0].reward_points;
-
-        // Get discount percentage based on points
         const discountPercentage = await getDiscountPercentage(userPoints);
-
-        // Apply discount to total price
         const discountAmount = totalPrice * (discountPercentage / 100);
         const discountedTotalPrice = totalPrice - discountAmount;
 
-        // Insert booking with discount, platform fee, and revenue into the database
+        // Insert booking
         const insertQuery = `
             INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_percentage, discount_amount) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -162,16 +130,32 @@ return res.status(400).send("Invalid ID number: ID number already exists in the 
 
         const bookingId = result.insertId;
 
-        // Update user points after creating the booking
+        // Update user points
         await updateUserPoints(userId, bookingId, durationInHours);
 
-        // Insert ID number into the insurance table
-        const insuranceInsertQuery = `
-            INSERT INTO insurance (user_id, Idnumber) 
-            VALUES (?, ?)
-        `;
-        await db.execute(insuranceInsertQuery, [userId, idNumber]);
+        const [insuranceResults] = await db.execute('SELECT imageurl FROM insurance WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]);
 
+const imageurlToUse = insuranceResults.length > 0 ? insuranceResults[0].imageurl : imageurl; 
+
+
+const insuranceInsertQuery = `INSERT INTO insurance (user_id, imageurl, bookingid) VALUES (?, ?, ?)`;
+await db.execute(insuranceInsertQuery, [userId, imageurlToUse, bookingId]);
+
+     // Insert ID number into insurance table with bookingId
+  //   const insuranceInsertQuery = INSERT INTO insurance (user_id, imageurl, bookingid) VALUES (?, ?, ?);
+    // await db.execute(insuranceInsertQuery, [userId, imageurl, bookingId]); 
+
+        // Update user category orders
+        const userCategoryOrderQuery = `
+            INSERT INTO user_category_orders (user_id, category, order_count, last_order_date)
+            VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                order_count = order_count + 1,
+                last_order_date = CURRENT_TIMESTAMP;
+        `;
+        await db.execute(userCategoryOrderQuery, [userId, category]);
+
+        // Respond with success
         res.status(201).json({
             message: "Booking created successfully.",
             originalTotalPrice: totalPrice,
@@ -186,6 +170,9 @@ return res.status(400).send("Invalid ID number: ID number already exists in the 
         res.status(500).send("Server error.");
     }
 };
+
+
+
 // دالة لاسترجاع جميع حجوزات اليوزر أو المالك
 const getAllBookings = async (req, res) => {
     try {
