@@ -83,19 +83,20 @@ exports.deleteLogistics = async (req, res) => {
 exports.getNearbyLocations = async (req, res) => {
     const { latitude, longitude } = req.query;
     try {
-        const response = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
+        const response = await axios.get('http://api.positionstack.com/v1/reverse', {
             params: {
-                location: `${latitude},${longitude}`,
-                radius: 5000,
-                key: process.env.GOOGLE_MAPS_API_KEY
+                access_key: process.env.POSITIONSTACK_API_KEY, // تغيير المفتاح إلى Positionstack
+                query: `${latitude},${longitude}`, // تمرير الإحداثيات
+                limit: 10 // اختيارياً، تحديد عدد النتائج المراد استرجاعها
             }
         });
-        res.status(200).json({ locations: response.data.results });
+        res.status(200).json({ locations: response.data.data }); // تعديل على النتيجة حسب ما يعيده Positionstack
     } catch (error) {
         console.error('Error fetching nearby locations:', error);
         res.status(500).json({ error: 'Error fetching nearby locations' });
     }
 };
+
 exports.getLogisticsByUser = async (req, res) => {
     try {
         const { userId } = req.params; // جلب userId من الـ params

@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const connection = require('./db'); // الاتصال بقاعدة البيانات من ملف db.js
@@ -12,6 +14,8 @@ const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
 const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
 const cartRoutes = require('./routes/cartRoutes'); // استيراد مسارات السلة
+const requestIp = require('request-ip');
+require('dotenv').config();
 
 
 app.use(express.json()); // To handle JSON requests
@@ -20,6 +24,9 @@ dotenv.config(); // تحميل الإعدادات من ملف .env
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(requestIp.mw())
+
 
 console.log("Starting server...");
 // وبعد كل استخدام للمسار
