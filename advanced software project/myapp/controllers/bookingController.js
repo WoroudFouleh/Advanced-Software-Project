@@ -80,8 +80,15 @@ const createBooking = async (req, res) => {
         const userId = req.body.user_id || null;
         const startDate = req.body.start_date || null;
         const endDate = req.body.end_date || null;
-        const imageurl = req.body.imageurl || null;
-
+        const idnumber = req.body.idnumber || null;
+        
+        const isValidIdNumber = (idNumber) => {
+            if (typeof idNumber === 'string' && idNumber.trim() !== '') {
+                const isValid = /^PAL\d{4}$/.test(idNumber.trim());
+                return isValid;
+            }
+            return false;
+        };
         // Check for overlapping bookings
         const checkQuery = `
             SELECT * FROM bookings 
@@ -133,19 +140,15 @@ const createBooking = async (req, res) => {
         // Update user points
         await updateUserPoints(userId, bookingId, durationInHours);
 
-        const [insuranceResults] = await db.execute('SELECT imageurl FROM insurance WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]);
+        const [insuranceResults] = await db.execute('SELECT idnumber FROM insurance WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]);
 
-const imageurlToUse = insuranceResults.length > 0 ? insuranceResults[0].imageurl : imageurl; 
+const idnumberToUse = insuranceResults.length > 0 ? insuranceResults[0].idnumber : idnumber; 
 
 
-const insuranceInsertQuery = `INSERT INTO insurance (user_id, imageurl, bookingid) VALUES (?, ?, ?)`;
-await db.execute(insuranceInsertQuery, [userId, imageurlToUse, bookingId]);
+const insuranceInsertQuery = `INSERT INTO insurance (user_id, idnumber, bookingid) VALUES (?, ?, ?)`;
+await db.execute(insuranceInsertQuery, [userId, idnumberToUse, bookingId]);
 
-     // Insert ID number into insurance table with bookingId
-  //   const insuranceInsertQuery = INSERT INTO insurance (user_id, imageurl, bookingid) VALUES (?, ?, ?);
-    // await db.execute(insuranceInsertQuery, [userId, imageurl, bookingId]); 
-
-        // Update user category orders
+     
         const userCategoryOrderQuery = `
             INSERT INTO user_category_orders (user_id, category, order_count, last_order_date)
             VALUES (?, ?, 1, CURRENT_TIMESTAMP)
