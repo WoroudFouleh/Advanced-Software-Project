@@ -36,6 +36,12 @@ const checkPermissions = (req, res, next) => {
             }
         } else if (user.role === 'owner') {
             // صلاحيات الـ owner
+            if (req.method === 'POST' && req.path === '/add_pricing_rule') {
+                next();
+            }
+            if (req.method === 'GET' && req.path === '/list_pricing_rules') {
+                next();
+            }
             if (req.path.startsWith('/messages')&& req.method === 'POST' ) {
                 const { receiverRole } = req.body;
                 if (receiverRole === 'user') {
@@ -82,7 +88,10 @@ const checkPermissions = (req, res, next) => {
                 next();
             } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
-            } else {
+            } else if (req.method === 'GET' && req.path === '/getRatingsByItemId') {
+                next();
+            } 
+            else {
                 return res.status(403).send("You do not have permission to perform this action.");
             }
         } else if (user.role === 'user') {
@@ -124,7 +133,17 @@ const checkPermissions = (req, res, next) => {
                 next();
             } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
-            } else {
+            } else if (req.method === 'POST' && req.path === '/Review') {
+                next();
+            }else if (req.method === 'DELETE' && req.path === '/deletereview') {
+                next();
+            }
+            else if (req.method === 'PUT' && req.path === '/updatereview') {
+                next();
+            }else if (req.method === 'GET' && req.path === '/getRatingsByItemId') {
+                next();
+            }
+            else {
                 return res.status(403).send("You do not have permission to perform this action.");
             }
         } else if(user.role === 'delivery'){

@@ -1,35 +1,29 @@
 const mysql = require('mysql2');
 
-// إعداد اتصال MySQL
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 's120WOROUD#',
-  database: 'worouddb'
-});
+const connection = require('../db'); // Ensure the path is correct
 
 exports.createItem = (itemData, callback) => {
-    const { name, category, description, basePricePerDay, basePricePerHour, username, status } = itemData;
-    // تحقق من القيم المطلوبة
-    if (!name || !category || !description || basePricePerDay === undefined || !username || !status) {
+  const { name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id } = itemData;
+
+  // تحقق من القيم المطلوبة
+  if (!name || !category || !description || basePricePerDay === undefined || !username || !status || !owner_id) {
       return callback(new Error("All fields are required."));
   }
-  
 
-    // تنفيذ الاستعلام
-    const query = `
-        INSERT INTO items (name, category, description, basePricePerDay, basePricePerHour, username, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+  // تنفيذ الاستعلام
+  const query = `
+      INSERT INTO items (name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
-    connection.execute(
-        query,
-        [name, category, description, basePricePerDay, basePricePerHour, username, status],
-        (error, result) => {
-            if (error) return callback(error);
-            callback(null, result);
-        }
-    );
+  db.execute(
+      query,
+      [name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id],
+      (error, result) => {
+          if (error) return callback(error);
+          callback(null, result);
+      }
+  );
 };
 
 // دالة لاسترجاع جميع العناصر
@@ -51,7 +45,6 @@ exports.getItemById = (id, callback) => {
     callback(null, results[0]); // جلب العنصر الأول
   });
 };
-
 // تحديث عنصر
 exports.updateItem = (id, itemData, callback) => {
   const { name, category, description, basePricePerDay, basePricePerHour, username, status } = itemData;

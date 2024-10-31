@@ -1,22 +1,23 @@
 // controllers/itemController.js
 const itemModel = require('../models/Items');
+const db = require('../db');
 
 // دالة إنشاء عنصر
 exports.createItem = (req, res) => {
-    const itemData = req.body;
-    const username = req.user.username; // الحصول على username من التوكن بعد التعديل
+  const itemData = req.body;
+  const username = req.user.username; // الحصول على username من التوكن بعد التعديل
 
-    // إضافة username إلى البيانات قبل الإرسال إلى الموديل
-    itemData.username = username;
-    console.log("Item Data:", itemData);
+  // إضافة username إلى البيانات قبل الإرسال إلى الموديل
+  itemData.username = username;
+  console.log("Item Data:", itemData);
 
-    itemModel.createItem(itemData, (error, result) => {
-        if (error) {
-            console.error("Error details:", error.message);  // عرض تفاصيل الخطأ
-            return res.status(500).json({ error: 'Error creating item', details: error.message });
-        }
-        res.status(201).json({ message: 'Item created successfully', result });
-    });
+  itemModel.createItem(itemData, (error, result) => {
+      if (error) {
+          console.error("Error details:", error.message);  // عرض تفاصيل الخطأ
+          return res.status(500).json({ error: 'Error creating item', details: error.message });
+      }
+      res.status(201).json({ message: 'Item created successfully', result });
+  });
 };
 
 // دالة استرجاع جميع العناصر

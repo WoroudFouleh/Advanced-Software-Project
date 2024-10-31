@@ -11,6 +11,16 @@ const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
 const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
 const messageRoutes = require('./routes/MessageRoutes');
+const rentalPeriodRoutes= require('./routes/rentalRoutes')
+const pricingRulesRoute = require('./routes/pricingRulesRoute');
+const notificationsRoutes = require('./routes/notificationsRoutes');
+const discountRoutes = require('./routes/discountRoutes');
+const seasonRoutes = require('./routes/seasonRoutes');
+const insuranceRoutes = require('./routes/insuranceRoutes');
+const RatingRoute= require('./routes/Rating');
+const logisticsRoutes = require('./routes/logistics');
+const cartRoutes = require('./routes/cartRoutes'); // استيراد مسارات السلة
+const requestIp = require('request-ip');
 
 
 const app = express();
@@ -32,6 +42,7 @@ app.use('/auth1', authRoute);
 
 console.log("User Route Loaded");
 app.use('/api', itemRoutes);
+
 app.use('/api2', userRoutes); // ربط المسارات
 
 console.log("Item Routes Loaded");
@@ -43,6 +54,34 @@ app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount
 app.use('/api/user-points-history', userPointsHistoryRoutes);
 // إعداد مسارات الرسائل
 app.use('/api3', messageRoutes);
+
+
+app.use('/api', insuranceRoutes);
+app.use('/api/users', RatingRoute);
+
+
+
+app.use('/api/logistics', logisticsRoutes);
+console.log("logistics Routes Loaded");
+app.use('/api', cartRoutes); // ربط مسارات السلة
+
+
+
+
+app.use('/api/rentalPeriods', rentalPeriodRoutes);
+console.log("Rental Period Routes Loaded");
+
+
+app.use('/api/season', seasonRoutes);
+console.log("season Routes Loaded"); 
+
+app.use('/api', discountRoutes);
+
+app.use('/api', pricingRulesRoute)
+console.log("Pricing Rules Routes Loaded");
+
+app.use('/api/notifications', notificationsRoutes);
+
 
 // تحديد منفذ الاستماع للخادم
 const port = process.env.PORT || 6005;
