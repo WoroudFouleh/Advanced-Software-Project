@@ -9,7 +9,8 @@ const {
     deleteLogistics,
     getNearbyLocations,
     getLogisticsByUser,
-    getLogisticsByStatus
+    getLogisticsByStatus,
+    processPayment 
 } = require('../controllers/logisticsController');
 
 // Route to create a logistics option (pickup or delivery)
@@ -36,7 +37,7 @@ router.put('/:id', logisticsPermissions, updateLogistics);
 // Route to delete a logistics option
 router.delete('/:id', logisticsPermissions, deleteLogistics);
 
-// إزالة أو تعليق سطر المدفوعات
-// router.post('/pay', processPayment);
+router.post('/pay', logisticsPermissions, processPayment);
+
 
 module.exports = router;

@@ -1,25 +1,42 @@
-// // controllers/paymentController.js
-// console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY);
+// // Import Stripe
+// const Stripe = require('stripe');
+// const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // Add your Stripe Secret Key to .env
 
-// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// exports.processPayment = async (req, res) => {
+//     const { logisticsId, paymentMethod } = req.body;
 
-// const processPayment = async (req, res) => {
-//     const { amount, currency, source, description } = req.body;
+//     // Fetch logistics data including the final price
+//     const logistics = await Logistics.getLogisticsById(logisticsId);
+//     if (!logistics) {
+//         return res.status(404).json({ error: 'Logistics entry not found' });
+//     }
 
-//     try {
-//         const paymentIntent = await stripe.paymentIntents.create({
-//             amount: amount * 100, // تحويل المبلغ إلى سنتات
-//             currency: currency,
-//             description: description,
-//             payment_method: source,
-//             confirm: true
-//         });
+//     if (paymentMethod === 'cash') {
+//         // If cash, just update paymentMethod and set paymentStatus to 'paid'
+//         await Logistics.updateLogistics(logisticsId, { paymentMethod: 'cash', paymentStatus: 'paid' });
+//         return res.status(200).json({ message: 'Cash payment confirmed' });
+//     } else if (paymentMethod === 'visa') {
+//         // Process card payment
+//         try {
+//             const paymentIntent = await stripe.paymentIntents.create({
+//                 amount: Math.ceil(logistics.finalPrice * 100), // Stripe expects amount in cents
+//                 currency: 'usd',
+//                 payment_method_types: ['card'],
+//             });
 
-//         res.status(200).json({ success: true, paymentIntent });
-//     } catch (error) {
-//         console.error('Error processing payment:', error);
-//         res.status(500).json({ success: false, message: error.message });
+//             // Update the logistics entry with payment details
+//             await Logistics.updateLogistics(logisticsId, {
+//                 paymentMethod: 'visa',
+//                 paymentStatus: 'pending', // Pending until confirmed
+//                 stripePaymentIntentId: paymentIntent.id
+//             });
+
+//             res.status(200).json({ clientSecret: paymentIntent.client_secret });
+//         } catch (error) {
+//             console.error('Error creating payment:', error);
+//             res.status(500).json({ error: 'Payment processing failed' });
+//         }
+//     } else {
+//         res.status(400).json({ error: 'Invalid payment method' });
 //     }
 // };
-
-// module.exports = { processPayment };
