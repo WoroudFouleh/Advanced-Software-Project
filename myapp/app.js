@@ -1,5 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const dotenv = require('dotenv');
 const connection = require('./db'); // الاتصال بقاعدة البيانات من ملف db.js
 const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
@@ -21,6 +23,7 @@ const RatingRoute= require('./routes/Rating');
 const logisticsRoutes = require('./routes/logistics');
 const cartRoutes = require('./routes/cartRoutes'); // استيراد مسارات السلة
 const requestIp = require('request-ip');
+const pickupRoutes = require('./routes/pickupRoutes'); // Import the route file
 
 
 const app = express();
@@ -81,6 +84,7 @@ app.use('/api', pricingRulesRoute)
 console.log("Pricing Rules Routes Loaded");
 
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api', pickupRoutes);
 
 
 // تحديد منفذ الاستماع للخادم

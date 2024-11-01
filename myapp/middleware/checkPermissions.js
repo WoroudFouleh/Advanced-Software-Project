@@ -110,14 +110,14 @@ const checkPermissions = (req, res, next) => {
                     return next();
                 
             }
-            if (req.path.startsWith('/api/user-points-history')) {
+            if (req.path.startsWith('/user-points-history')) {
                 next();
             }
             if (req.path.startsWith('/api/statistics')) {
                 return res.status(403).send("You do not have permission to access statistics.");
             }
             if (req.path.startsWith('/api/discount-levels')) {
-                return res.status(403).send("You do not have permission to access statistics.");
+                return res.status(403).send("You do not have permission to access discount-levels.");
             }
             if (req.method === 'GET' && (req.path === '/Allitems' || req.path.startsWith('/items/') || req.path === '/filter')) {
                 next();

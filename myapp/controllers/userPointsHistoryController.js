@@ -17,14 +17,17 @@ const getAllUserPointsHistory = (req, res) => {
     });
 };
 
-// إضافة نقاط المستخدم
 const addUserPointsHistory = (req, res) => {
     const newEntry = req.body;
     UserPointsHistory.addUserPointsHistory(newEntry, (error, results) => {
-        if (error) return res.status(500).json({ error: "Database error" });
+        if (error) {
+            console.error("Database error:", error); // طباعة الخطأ الكامل
+            return res.status(500).json({ error: "Database error", details: error });
+        }
         res.status(201).json({ message: "Points history added successfully", id: results.insertId });
     });
 };
+
 
 // تحديث نقاط المستخدم
 const updateUserPointsHistory = (req, res) => {
