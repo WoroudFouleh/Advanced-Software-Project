@@ -44,9 +44,7 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You can only message users.");
             }
             
-            if (req.method === 'POST' && req.path === '/add_pricing_rule') {
-                next();
-            }
+          
             if (req.method === 'GET' && req.path === '/list_pricing_rules') {
                 next();
             }
@@ -75,9 +73,15 @@ const checkPermissions = (req, res, next) => {
             } else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
             } 
+            else if (req.method === 'POST' && req.path.startsWith('/add_pricing_rule/')) {
+                next();
+            }  
             else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
                 next();
-            } else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
+            } 
+            else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/')) {
+                next();
+            }else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
                 next();
             } else if (req.method === 'GET' && req.path === '/profile') {
                 next();
@@ -92,7 +96,8 @@ const checkPermissions = (req, res, next) => {
             } else {
                 return res.status(403).send("You do not have permission to perform this action.");
             }
-        } else if (user.role === 'user') {
+        } 
+        else if (user.role === 'user') {
             // صلاحيات الـ user
             if (req.path.startsWith('/messages/send') && req.method === 'POST') {
                 const { receiverRole } = req.body;
@@ -101,7 +106,9 @@ const checkPermissions = (req, res, next) => {
                 }
                 return res.status(403).send("You can only message owners or delivery.");
             }
-            
+            else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/')) {
+                next();
+            }
 
             if (req.path.startsWith('/messages') && req.method === 'GET') {
                 

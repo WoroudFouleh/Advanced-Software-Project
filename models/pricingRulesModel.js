@@ -1,13 +1,12 @@
 const db = require("../db");
 
 
-// وظيفة لإنشاء قاعدة تسعير جديدة
 const createPricingRule = (pricingRule, callback) => {
     const query = `
         INSERT INTO pricing_rules 
-        (item_id, pricing_type, rate, min_rental_period_days, min_rental_period_hours, start_date, end_date, discount,   discount_condition_id, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
+        (item_id, pricing_type, rate, min_rental_period_days, min_rental_period_hours, start_date, end_date, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`; 
+
     db.query(query, [
         pricingRule.item_id,
         pricingRule.pricing_type,
@@ -16,13 +15,11 @@ const createPricingRule = (pricingRule, callback) => {
         pricingRule.min_rental_period_hours,
         pricingRule.start_date,
         pricingRule.end_date,
-        pricingRule.discount,
-        pricingRule.discount_condition_id,
         pricingRule.created_by
-    ], callback);
+    ], callback); // تقديم 8 قيم تتطابق مع 8 أعمدة.
 };
 
-// وظيفة للحصول على جميع قواعد التسعير
+
 const getAllPricingRules = (callback) => {
     const query = 'SELECT * FROM pricing_rules';
     db.query(query, callback);
@@ -38,7 +35,7 @@ const getPricingRuleById = (id, callback) => {
 const updatePricingRule = (id, pricingRule, callback) => {
     const query = `
         UPDATE pricing_rules 
-        SET item_id = ?, pricing_type = ?, rate = ?, min_rental_period_days = ?, min_rental_period_hours = ?, start_date = ?, end_date = ?, discount = ?, discount_condition = ?, created_by = ?
+        SET item_id = ?, pricing_type = ?, rate = ?, min_rental_period_days = ?, min_rental_period_hours = ?, start_date = ?, end_date = ?, created_by = ?
         WHERE id = ?`;
     
     db.query(query, [
@@ -49,8 +46,6 @@ const updatePricingRule = (id, pricingRule, callback) => {
         pricingRule.min_rental_period_hours,
         pricingRule.start_date,
         pricingRule.end_date,
-        pricingRule.discount,
-        pricingRule.discount_condition,
         pricingRule.created_by,
         id
     ], callback);
