@@ -15,7 +15,7 @@ const {
 // Route to create a logistics option (pickup or delivery)
 router.post('/create', logisticsPermissions, createLogistics);
 
-// Route to get nearby logistics options - **Move this before `/:id`**
+// Route to get nearby logistics options
 router.get('/nearby', getNearbyLocations);
 
 // Route to get logistics by user ID
@@ -35,5 +35,8 @@ router.put('/:id', logisticsPermissions, updateLogistics);
 
 // Route to delete a logistics option
 router.delete('/:id', logisticsPermissions, deleteLogistics);
+
+// إزالة أو تعليق سطر المدفوعات
+// router.post('/pay', processPayment);
 
 module.exports = router;

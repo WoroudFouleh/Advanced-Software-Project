@@ -1,32 +1,87 @@
 const Logistics = require('../models/LogisticsTemp');
 const axios = require('axios');
+const connection = require('../db');  // قم بتعديل المسار إذا كان ملف db في مكان مختلف
 require('dotenv').config();
 
 exports.createLogistics = async (req, res) => {
     try {
-        const { userId, pickupLocation, deliveryAddress, deliveryOption } = req.body;
+        const userId = req.user.id;
+        const { pickupLocation, deliveryAddress, deliveryOption } = req.body;
 
         if (!userId || !pickupLocation || !deliveryAddress || !deliveryOption) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        const logistics = await Logistics.createLogistics({ userId, pickupLocation, deliveryAddress, deliveryOption });
+        // جلب سعر العنصر من جدول bookings
+        const bookingQuery = 'SELECT total_price FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1';
+        const [bookingResult] = await connection.query(bookingQuery, [userId]);
+
+        if (!bookingResult.length) {
+            return res.status(404).json({ error: 'No booking found for this user.' });
+        }
+
+        const itemPrice = bookingResult[0].total_price;
+        let deliveryPrice = 0;
+        let finalPrice = itemPrice;
+
+        if (deliveryOption === 'delivery') {
+            // حساب سعر التوصيل
+            deliveryPrice = calculateDeliveryPrice(pickupLocation, deliveryAddress);
+            finalPrice = itemPrice + deliveryPrice;  // التأكد من أن جمع سعر التوصيل وسعر العنصر يحدث هنا
+        }
+
+        // تخزين سجل اللوجستيات مع finalPrice
+        const logistics = await Logistics.createLogistics({
+            userId,
+            pickupLocation,
+            deliveryAddress,
+            deliveryOption,
+            deliveryPrice,
+            finalPrice
+        });
 
         res.status(201).json({ message: 'Logistics option created', logistics });
     } catch (error) {
-        console.error('Error creating logistics option:', error); // تحقق من وحدة التحكم
+        console.error('Error creating logistics option:', error);
         res.status(500).json({ error: 'An error occurred while creating logistics option' });
     }
 };
 
+
+
+
+// دالة لحساب المسافة أو السعر باستخدام API للخرائط
+
+const calculateDeliveryPrice = (pickupLocation, deliveryAddress) => {
+    try {
+        // Extract numbers from the pickup and delivery addresses
+        const pickupNumber = parseInt(pickupLocation.match(/\d+/)[0]);
+        const deliveryNumber = parseInt(deliveryAddress.match(/\d+/)[0]);
+
+        // Calculate the distance based on the address numbers
+        const distance = Math.abs(deliveryNumber - pickupNumber);
+
+        // Define price per unit and calculate delivery price
+        const pricePerUnit = 5; // Adjust this value as needed
+        const deliveryPrice = Math.ceil((distance / 10) * pricePerUnit); // Use Math.ceil to round up
+
+        return deliveryPrice;
+    } catch (error) {
+        console.error('Error calculating delivery price:', error);
+        return 0; // Return 0 as the default price if an error occurs
+    }
+};
+
+
 exports.getLogistics = async (req, res) => {
     try {
         const logistics = await Logistics.getLogistics();
-        res.status(200).json({ logistics });
+        res.status(200).json({ logistics }); // تأكد من أن logistics تحتوي على deliveryPrice
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics options' });
     }
 };
+
 
 exports.getLogisticsById = async (req, res) => {
     try {
@@ -34,11 +89,12 @@ exports.getLogisticsById = async (req, res) => {
         if (!logistics) {
             return res.status(404).json({ error: 'Logistics not found' });
         }
-        res.status(200).json({ logistics });
+        res.status(200).json({ logistics }); // يتضمن deliveryPrice الآن
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics option' });
     }
 };
+
 
 const { sendNotification } = require('../services/notificationService'); // Import the notification service
 
@@ -50,14 +106,32 @@ exports.updateLogistics = async (req, res) => {
         }
 
         const { pickupLocation, deliveryAddress, deliveryOption, status } = req.body;
+        let deliveryPrice = logistics.deliveryPrice;
+
+        if (deliveryOption === 'delivery') {
+            const distance = await calculateDeliveryPrice(pickupLocation || logistics.pickupLocation, deliveryAddress || logistics.deliveryAddress);
+            deliveryPrice = distance * 0.5;
+        } else if (deliveryOption === 'pickup') {
+            deliveryPrice = 0;
+        }
+
+        // Fetch the latest booking to get total_price
+        const [booking] = await connection.query('SELECT total_price FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1', [logistics.userId]);
+        if (!booking || booking.length === 0) {
+            return res.status(404).json({ error: 'Booking not found for this user.' });
+        }
+
+        const totalPrice = booking[0].total_price;
+        const finalPrice = deliveryOption === 'delivery' ? totalPrice + deliveryPrice : totalPrice;
 
         const result = await Logistics.updateLogistics(req.params.id, {
             pickupLocation: pickupLocation || logistics.pickupLocation,
             deliveryAddress: deliveryAddress || logistics.deliveryAddress,
             deliveryOption: deliveryOption || logistics.deliveryOption,
-            status: status || logistics.status
+            deliveryPrice,
+            status: status || logistics.status,
+            finalPrice
         });
-
         // Check if the status has changed to 'in_progress'
         if (status === 'in_progress' && logistics.status !== 'in_progress') {
             await sendNotification(logistics.userId, 'Your logistics is now in progress.');
@@ -65,9 +139,14 @@ exports.updateLogistics = async (req, res) => {
 
         res.status(200).json({ message: 'Logistics updated', result });
     } catch (error) {
+        console.error('Error updating logistics:', error);
         res.status(500).json({ error: 'An error occurred while updating logistics' });
     }
 };
+
+
+
+
 
 
 
@@ -104,11 +183,12 @@ exports.getLogisticsByUser = async (req, res) => {
         if (logistics.length === 0) {
             return res.status(404).json({ error: 'No logistics found for this user' });
         }
-        res.status(200).json({ logistics });
+        res.status(200).json({ logistics }); // تأكد من أن logistics تحتوي على deliveryPrice
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics for the user' });
     }
 };
+
 
 // جلب جميع خيارات اللوجستيات حسب الحالة
 exports.getLogisticsByStatus = async (req, res) => {
@@ -118,11 +198,12 @@ exports.getLogisticsByStatus = async (req, res) => {
         if (logistics.length === 0) {
             return res.status(404).json({ error: 'No logistics found with this status' });
         }
-        res.status(200).json({ logistics });
+        res.status(200).json({ logistics }); // تأكد من أن logistics تحتوي على deliveryPrice
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics by status' });
     }
 };
+
 
 
 
