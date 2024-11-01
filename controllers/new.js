@@ -90,6 +90,13 @@ const createBooking = async (req, res) => {
         if (!['hourly', 'daily'].includes(rentalType)) {
             return res.status(400).send("Invalid rental type. It must be 'hourly' or 'daily'.");
         }
+        const isValidIdNumber = (idNumber) => {
+            if (typeof idNumber === 'string' && idNumber.trim() !== '') {
+                const isValid = /^PAL\d{4}$/.test(idNumber.trim());
+                return isValid;
+            }
+            return false;
+        };
 
         // Check for overlapping bookings
         const checkQuery = `
@@ -104,6 +111,7 @@ const createBooking = async (req, res) => {
         if (results.length > 0) {
             return res.status(400).send("Booking already exists for this item in the selected time period.");
         }
+        
 
         // Fetch item details
         const itemQuery = 'SELECT basePricePerHour, basePricePerDay, category, owner_id FROM items WHERE id = ?';
