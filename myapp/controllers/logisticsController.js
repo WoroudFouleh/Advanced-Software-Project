@@ -63,7 +63,7 @@ const calculateDeliveryPrice = (pickupLocation, deliveryAddress) => {
 
         // Define price per unit and calculate delivery price
         const pricePerUnit = 5; // Adjust this value as needed
-        const deliveryPrice = Math.ceil((distance / 10) * pricePerUnit); // Use Math.ceil to round up
+        const deliveryPrice = Math.ceil((distance / 100) * pricePerUnit); // Use Math.ceil to round up
 
         return deliveryPrice;
     } catch (error) {
