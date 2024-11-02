@@ -1,9 +1,33 @@
-
 const db = require('../db');
-const discountModel = require('../models/DiscountModel'); 
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' }); 
+// دالة للحصول على نسبة الخصم بناءً على نقاط المستخدم
+async function getDiscountPercentage(userPoints) {
+    try {
+        console.log("User points:", userPoints);  // عرض النقاط
 
+        const query = `
+            SELECT discount_percentage 
+            FROM discount_levels 
+            WHERE min_points <= ? 
+            ORDER BY min_points DESC 
+            LIMIT 1
+        `;
+
+        const [results] = await db.execute(query, [userPoints]);
+
+        console.log("Discount query results:", results);  // عرض نتائج الاستعلام
+
+        const discount = results.length > 0 ? results[0].discount_percentage : 0;
+        console.log("Applicable discount:", discount);  // عرض النسبة النهائية
+        return discount;
+    } catch (error) {
+        console.error("Error fetching discount percentage:", error);
+        return 0;  // في حال وجود خطأ، لا يتم تطبيق خصم
+    }
+}
+
+// دالة لحساب السعر الكلي ورسوم المنصة
 function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay, rentalType) {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -23,6 +47,7 @@ function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, base
     return { totalPrice, platformFee, totalRevenue, durationInHours };
 }
 
+// دالة لتحديث نقاط المستخدم
 async function updateUserPoints(userId, bookingId, durationInHours) {
     const pointsPerHour = 5;
     const earnedPoints = durationInHours * pointsPerHour;
@@ -39,6 +64,7 @@ async function updateUserPoints(userId, bookingId, durationInHours) {
         await db.execute(updateUserQuery, [earnedPoints, userId]);
         console.log("User points updated successfully.");
 
+        // إضافة سجل في user_points_history
         const insertHistoryQuery = `
             INSERT INTO user_points_history (user_id, booking_id, points_earned)
             VALUES (?, ?, ?)
@@ -49,45 +75,27 @@ async function updateUserPoints(userId, bookingId, durationInHours) {
         console.error("Error updating user points or inserting points history:", error);
     }
 }
-
-function getDiscountPercentage(userPoints, callback) {
-    console.log("User points:", userPoints);  
-    
-    const query = `
-        SELECT discount_percentage 
-        FROM discount_levels 
-        WHERE min_points <= ? 
-        ORDER BY min_points DESC 
-        LIMIT 1
-    `;
-
-    db.execute(query, [userPoints], (error, results) => {
-        if (error) {
-            console.error("Error fetching discount percentage:", error);
-            return callback(0);
-        }
-
-        console.log("Discount query results:", results);  
-
-        const discount = results.length > 0 ? results[0].discount_percentage : 0;
-        console.log("Applicable discount:", discount);  
-        callback(discount);
-    });
-}
-
 const createBooking = async (req, res) => {
     try {
         const itemId = req.body.item_id || null;
         const userId = req.body.user_id || null;
         const startDate = req.body.start_date || null;
         const endDate = req.body.end_date || null;
-        const rentalType = req.body.rentalType || null;
         const idnumber = req.body.idnumber || null;
+        const rentalType=req.body.rentalType|| null;
 
         if (!['hourly', 'daily'].includes(rentalType)) {
             return res.status(400).send("Invalid rental type. It must be 'hourly' or 'daily'.");
         }
-
+        
+        const isValidIdNumber = (idNumber) => {
+            if (typeof idNumber === 'string' && idNumber.trim() !== '') {
+                const isValid = /^PAL\d{4}$/.test(idNumber.trim());
+                return isValid;
+            }
+            return false;
+        };
+        // Check for overlapping bookings
         const checkQuery = `
             SELECT * FROM bookings 
             WHERE item_id = ? 
@@ -96,13 +104,19 @@ const createBooking = async (req, res) => {
                 (start_date < ? AND end_date > ?)
             )
         `;
-        const [results] = await db.execute(checkQuery, [itemId, endDate, startDate, startDate, endDate]);
+        const results = await db.execute(query, [userPoints]);
+        if (!Array.isArray(results) || results.length === 0) {
+            throw new Error("تنسيق نتيجة الاستعلام غير متوقع.");
+        }
+        
         if (results.length > 0) {
             return res.status(400).send("Booking already exists for this item in the selected time period.");
         }
-        
+
+        // Fetch item details
         const itemQuery = 'SELECT basePricePerHour, basePricePerDay, category, owner_id FROM items WHERE id = ?';
         const [itemResults] = await db.execute(itemQuery, [itemId]);
+
         if (itemResults.length === 0) {
             return res.status(404).send("Item not found.");
         }
@@ -110,13 +124,22 @@ const createBooking = async (req, res) => {
         const { basePricePerHour, basePricePerDay, category, owner_id: ownerId } = itemResults[0];
         const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay, rentalType);
 
-        // Fetch user's discount percentage based on points
-        const userPoints = await getUserPoints(userId); // دالة للحصول على نقاط المستخدم
-        const pointsDiscountPercentage = await new Promise((resolve) => {
-            getDiscountPercentage(userPoints, resolve);
-        });
+        //const { basePricePerHour, basePricePerDay, category } = itemResults[0];
+        //const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay);
 
-        // Fetch discounts for item and calculate total discount
+        // Fetch user reward points
+        const userPointsQuery = 'SELECT reward_points FROM users WHERE id = ?';
+        const [userResults] = await db.execute(userPointsQuery, [userId]);
+
+        if (userResults.length === 0) {
+            return res.status(404).send("User not found.");
+        }
+
+        const userPoints = userResults[0].reward_points;
+        const discountPercentage = await getDiscountPercentage(userPoints);
+        const discountAmount = totalPrice * (discountPercentage / 100);
+        const discountedTotalPrice = totalPrice - discountAmount;
+
         const discounts = await discountModel.getDiscountsByItemId(itemId);
         let totalDiscount = 0;
 
@@ -124,8 +147,8 @@ const createBooking = async (req, res) => {
         const pointsDiscountAmount = (totalPrice * pointsDiscountPercentage) / 100;
         totalDiscount += pointsDiscountAmount;
 
-        // حساب الخصومات الثابتة أو النسبية
-        discounts.forEach(discount => {
+          // حساب الخصومات الثابتة أو النسبية
+          discounts.forEach(discount => {
             if (discount.discount_type === 'fixed') {
                 totalDiscount += discount.discount_value;
             } else if (discount.discount_type === 'percentage') {
@@ -133,27 +156,30 @@ const createBooking = async (req, res) => {
             }
         });
 
-        const discountedTotalPrice = totalPrice - totalDiscount;
+         discountedTotalPrice = totalPrice - totalDiscount;
+
 
         // Insert booking
         const insertQuery = `
-            INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_amount) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_percentage, discount_amount) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        const [result] = await db.execute(insertQuery, [itemId, userId, startDate, endDate, discountedTotalPrice, platformFee, totalRevenue, totalDiscount]);
+        const [result] = await db.execute(insertQuery, [itemId, userId, startDate, endDate, discountedTotalPrice, platformFee, totalRevenue, discountPercentage, discountAmount]);
 
         const bookingId = result.insertId;
 
         // Update user points
         await updateUserPoints(userId, bookingId, durationInHours);
 
-        // Fetch or insert insurance info
         const [insuranceResults] = await db.execute('SELECT idnumber FROM insurance WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]);
-        const idnumberToUse = insuranceResults.length > 0 ? insuranceResults[0].idnumber : idnumber;
-        const insuranceInsertQuery = `INSERT INTO insurance (user_id, idnumber, bookingid) VALUES (?, ?, ?)`;
-        await db.execute(insuranceInsertQuery, [userId, idnumberToUse, bookingId]);
 
-        // Update user category orders
+const idnumberToUse = insuranceResults.length > 0 ? insuranceResults[0].idnumber : idnumber; 
+
+
+const insuranceInsertQuery = `INSERT INTO insurance (user_id, idnumber, bookingid) VALUES (?, ?, ?)`;
+await db.execute(insuranceInsertQuery, [userId, idnumberToUse, bookingId]);
+
+     
         const userCategoryOrderQuery = `
             INSERT INTO user_category_orders (user_id, category, order_count, last_order_date)
             VALUES (?, ?, 1, CURRENT_TIMESTAMP)
@@ -163,15 +189,12 @@ const createBooking = async (req, res) => {
         `;
         await db.execute(userCategoryOrderQuery, [userId, category]);
 
-        // Send notification to the owner
-        const notificationMessage = `User ${userId} has booked your item ${itemId} from ${startDate} to ${endDate}.`;
-        sendNotificationToOwner(ownerId, notificationMessage, itemId, userId);
-
         // Respond with success
         res.status(201).json({
             message: "Booking created successfully.",
             originalTotalPrice: totalPrice,
-            totalDiscount,
+            discountPercentage,
+            discountAmount,
             finalTotalPrice: discountedTotalPrice,
             platformFee,
             totalRevenue
@@ -182,18 +205,23 @@ const createBooking = async (req, res) => {
     }
 };
 
+
+
+// دالة لاسترجاع جميع حجوزات اليوزر أو المالك
 const getAllBookings = async (req, res) => {
     try {
-        const username = req.user.username;  
-        const role = req.user.role;  
+        const username = req.user.username;  // اسم المستخدم
+        const role = req.user.role;  // دور المستخدم (User أو Owner)
 
         let query;
         let params;
 
         if (role === 'user') {
+            // جلب الحجوزات التي قام بها المستخدم
             query = 'SELECT * FROM bookings WHERE user_id = ?';
             params = [username];
         } else if (role === 'owner') {
+            // جلب الحجوزات المرتبطة بممتلكات المالك باستخدام username
             query = `
                 SELECT b.* FROM bookings b
                 JOIN items i ON b.item_id = i.id
@@ -201,6 +229,7 @@ const getAllBookings = async (req, res) => {
             `;
             params = [username];
         } else if (role === 'admin') {
+            // جلب جميع الحجوزات
             query = 'SELECT * FROM bookings';
             params = [];
         } else {
@@ -215,16 +244,18 @@ const getAllBookings = async (req, res) => {
     }
 };
 
+// دالة لاسترجاع حجز معين (اليوزر أو المالك)
 const getBookingById = async (req, res) => {
     try {
         const bookingId = req.params.id;
-        const username = req.user.username;  
-        const role = req.user.role;  
+        const username = req.user.username;  // اسم المستخدم
+        const role = req.user.role;  // دور المستخدم
 
         let query;
         let params;
 
         if (role === 'user') {
+            // اليوزر يسترجع حجز يخصه فقط
             query = `
                 SELECT id, item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue 
                 FROM bookings 
@@ -232,6 +263,7 @@ const getBookingById = async (req, res) => {
             `;
             params = [bookingId, username];
         } else if (role === 'owner') {
+            // المالك يسترجع حجز مرتبط بممتلكاته باستخدام username
             query = `
                 SELECT b.id, b.item_id, b.user_id, b.start_date, b.end_date, b.total_price, b.platform_fee, b.total_revenue 
                 FROM bookings b
@@ -240,6 +272,7 @@ const getBookingById = async (req, res) => {
             `;
             params = [bookingId, username];
         } else if (role === 'admin') {
+            // جلب الحجز المحدد
             query = 'SELECT * FROM bookings WHERE id = ?';
             params = [bookingId];
         } else {
@@ -259,6 +292,7 @@ const getBookingById = async (req, res) => {
     }
 };
 
+// دالة لتحديث حجز (اليوزر أو المالك)
 const updateBooking = async (req, res) => {
     try {
         const bookingId = req.params.id;
@@ -267,6 +301,7 @@ const updateBooking = async (req, res) => {
         const startDate = req.body.start_date;
         const endDate = req.body.end_date;
 
+        // Check required fields
         if (!startDate || !endDate) {
             return res.status(400).send("Start date and end date are required.");
         }
@@ -275,15 +310,18 @@ const updateBooking = async (req, res) => {
         let params;
 
         if (role === 'user') {
+            // Get user_id based on username
             const [userResults] = await db.execute('SELECT id FROM users WHERE username = ?', [username]);
             if (userResults.length === 0) {
                 return res.status(404).send("User not found.");
             }
             const userId = userResults[0].id;
 
+            // Check if booking belongs to user
             query = 'SELECT * FROM bookings WHERE id = ? AND user_id = ?';
             params = [bookingId, userId];
         } else if (role === 'owner') {
+            // Owner checks bookings associated with their items using username
             query = `
                 SELECT b.* FROM bookings b
                 JOIN items i ON b.item_id = i.id
@@ -291,6 +329,7 @@ const updateBooking = async (req, res) => {
             `;
             params = [bookingId, username];
         } else if (role === 'admin') {
+            // Admin can access any booking
             query = 'SELECT * FROM bookings WHERE id = ?';
             params = [bookingId];
         } else {
@@ -300,19 +339,21 @@ const updateBooking = async (req, res) => {
         const [results] = await db.execute(query, params);
         if (results.length === 0) return res.status(404).send("Booking not found or unauthorized.");
 
+        // Check for overlapping bookings
         const checkQuery = `
             SELECT * FROM bookings 
             WHERE item_id = ? 
-            AND id != ?  
+            AND id != ?  -- Exclude the current booking
             AND (
                 (start_date < ? AND end_date > ?) OR 
                 (start_date < ? AND end_date > ?)
             )
         `;
-        const itemId = results[0].item_id; 
+        const itemId = results[0].item_id; // Get item_id to check overlap
         const [checkResults] = await db.execute(checkQuery, [itemId, bookingId, endDate, startDate, startDate, endDate]);
         if (checkResults.length > 0) return res.status(400).send("Booking already exists for this item in the selected time period.");
 
+        // Update booking
         const updateQuery = 'UPDATE bookings SET start_date = ?, end_date = ? WHERE id = ?';
         await db.execute(updateQuery, [startDate, endDate, bookingId]);
 
@@ -333,15 +374,18 @@ const deleteBooking = async (req, res) => {
         let params;
 
         if (role === 'user') {
+            // Retrieve user_id based on username
             const [userResults] = await db.execute('SELECT id FROM users WHERE username = ?', [username]);
             if (userResults.length === 0) {
                 return res.status(404).send("User not found.");
             }
             const userId = userResults[0].id;
 
+            // User can only delete their own bookings
             query = 'DELETE FROM bookings WHERE id = ? AND user_id = ?';
             params = [bookingId, userId];
         } else if (role === 'owner') {
+            // Owner deletes bookings associated with their items using username
             query = `
                 DELETE b FROM bookings b
                 JOIN items i ON b.item_id = i.id
@@ -349,6 +393,7 @@ const deleteBooking = async (req, res) => {
             `;
             params = [bookingId, username];
         } else if (role === 'admin') {
+            // Admin can delete any booking
             query = 'DELETE FROM bookings WHERE id = ?';
             params = [bookingId];
         } else {
@@ -364,60 +409,16 @@ const deleteBooking = async (req, res) => {
         res.status(500).send("Server error.");
     }
 };
-const getBookingStatistics = (req, res) => {
-    const query = `
-        SELECT 
-            DATE(start_date) AS booking_date, 
-            COUNT(*) AS booking_count 
-        FROM bookings 
-        GROUP BY booking_date
-        ORDER BY booking_date DESC
-    `;
 
-    db.execute(query, (error, dailyResults) => {
-        if (error) return res.status(500).send("Database error.");
-
-        const monthlyQuery = `
-            SELECT 
-                DATE_FORMAT(start_date, '%Y-%m') AS booking_month, 
-                COUNT(*) AS booking_count 
-            FROM bookings 
-            GROUP BY booking_month
-            ORDER BY booking_month DESC
-        `;
-
-        db.execute(monthlyQuery, (error, monthlyResults) => {
-            if (error) return res.status(500).send("Database error.");
-
-            const yearlyQuery = `
-                SELECT 
-                    YEAR(start_date) AS booking_year, 
-                    COUNT(*) AS booking_count 
-                FROM bookings 
-                GROUP BY booking_year
-                ORDER BY booking_year DESC
-            `;
-
-            db.execute(yearlyQuery, (error, yearlyResults) => {
-                if (error) return res.status(500).send("Database error.");
-
-                res.status(200).json({
-                    dailyBookings: dailyResults,
-                    monthlyBookings: monthlyResults,
-                    yearlyBookings: yearlyResults
-                });
-            });
-        });
-    });
-};
+// تصدير الدوال
 module.exports = {
     createBooking,
     getAllBookings,
     getBookingById,
     updateBooking,
     deleteBooking,
-    getBookingStatistics,
 };
+
 /*const db = require('../db');
 const discountModel = require('../models/DiscountModel'); // تأكد من المسار الصحيح
 
