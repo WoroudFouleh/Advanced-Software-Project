@@ -17,7 +17,7 @@ const {
 router.post('/create', logisticsPermissions, createLogistics);
 
 // Route to get nearby logistics options
-router.get('/nearby', getNearbyLocations);
+router.get('/nearby-locations', getNearbyLocations);
 
 // Route to get logistics by user ID
 router.get('/user/:userId', getLogisticsByUser);
@@ -28,16 +28,15 @@ router.get('/status/:status', getLogisticsByStatus);
 // Route to get all logistics options
 router.get('/', getLogistics);
 
-// Route to get logistics by ID
-router.get('/:id', getLogisticsById);
-
 // Route to update a logistics option
 router.put('/:id', logisticsPermissions, updateLogistics);
 
 // Route to delete a logistics option
 router.delete('/:id', logisticsPermissions, deleteLogistics);
 
-router.post('/pay', logisticsPermissions, processPayment);
+// Route to get logistics by ID (place this at the end)
+router.get('/:id', getLogisticsById);
 
+router.post('/pay', logisticsPermissions, processPayment);
 
 module.exports = router;

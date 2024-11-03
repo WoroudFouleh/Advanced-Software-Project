@@ -2,29 +2,27 @@ const connection = require('../db');
 
 // Create a logistics option
 const createLogistics = async (data) => {
-    const { userId, pickupLocation, deliveryAddress, deliveryOption, deliveryPrice, finalPrice } = data;
-
+    const { userId, pickupLocation, deliveryAddress, deliveryOption, status } = data;
     const query = `
-        INSERT INTO Logistics (userId, pickupLocation, deliveryAddress, deliveryOption, status, deliveryPrice, finalPrice, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, 'pending', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        INSERT INTO Logistics (userId, pickupLocation, deliveryAddress, deliveryOption, status, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `;
-    const [result] = await connection.query(query, [userId, pickupLocation, deliveryAddress, deliveryOption, deliveryPrice, finalPrice]);
+    const [result] = await connection.query(query, [userId, pickupLocation, deliveryAddress, deliveryOption, status || 'pending']);
     return result;
 };
-
 // Get all logistics options
 const getLogistics = async () => {
     const [rows] = await connection.query('SELECT * FROM Logistics');
-    return rows; // تأكد من جلب deliveryPrice مع بقية البيانات
+    return rows;
 };
 // Get logistics by ID
 const getLogisticsById = async (id) => {
     const [rows] = await connection.query('SELECT * FROM Logistics WHERE id = ?', [id]);
-    return rows[0]; // تأكد من جلب deliveryPrice مع بقية البيانات
+    return rows[0];
 };
 // Update logistics
 const updateLogistics = async (id, data) => {
-    const { pickupLocation, deliveryAddress, deliveryOption, status, deliveryPrice } = data;
+    const { pickupLocation, deliveryAddress, deliveryOption, status } = data;
 
     // Fetch the existing logistics entry to retain the current values
     const logistics = await getLogisticsById(id);
@@ -38,15 +36,14 @@ const updateLogistics = async (id, data) => {
     const updatedDeliveryAddress = deliveryAddress || logistics.deliveryAddress;
     const updatedDeliveryOption = deliveryOption || logistics.deliveryOption;
     const updatedStatus = status || logistics.status;
-    const updatedDeliveryPrice = deliveryPrice !== undefined ? deliveryPrice : logistics.deliveryPrice; // تحديث deliveryPrice
 
     const query = `
         UPDATE Logistics 
-        SET pickupLocation = ?, deliveryAddress = ?, deliveryOption = ?, status = ?, deliveryPrice = ?, updatedAt = CURRENT_TIMESTAMP
+        SET pickupLocation = ?, deliveryAddress = ?, deliveryOption = ?, status = ?, updatedAt = CURRENT_TIMESTAMP
         WHERE id = ?
     `;
     const [result] = await connection.query(query, [
-        updatedPickupLocation, updatedDeliveryAddress, updatedDeliveryOption, updatedStatus, updatedDeliveryPrice, id
+        updatedPickupLocation, updatedDeliveryAddress, updatedDeliveryOption, updatedStatus, id
     ]);
     return result;
 };
@@ -60,17 +57,15 @@ const deleteLogistics = async (id) => {
 const getLogisticsByUser = async (userId) => {
     const query = 'SELECT * FROM Logistics WHERE userId = ?';
     const [rows] = await connection.query(query, [userId]);
-    return rows; // تأكد من جلب deliveryPrice مع بقية البيانات
+    return rows;
 };
-
 
 // جلب جميع خيارات اللوجستيات حسب الحالة
 const getLogisticsByStatus = async (status) => {
     const query = 'SELECT * FROM Logistics WHERE status = ?';
     const [rows] = await connection.query(query, [status]);
-    return rows; // تأكد من جلب deliveryPrice مع بقية البيانات
+    return rows;
 };
-
 
 // Export all the methods
 module.exports = { createLogistics, getLogistics, getLogisticsById, updateLogistics, deleteLogistics, getLogisticsByUser,
