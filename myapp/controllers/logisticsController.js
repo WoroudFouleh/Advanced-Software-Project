@@ -12,7 +12,7 @@ exports.createLogistics = async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // جلب سعر العنصر من جدول bookings
+        // Fetch item price and parse it as a float
         const bookingQuery = 'SELECT total_price FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1';
         const [bookingResult] = await connection.query(bookingQuery, [userId]);
 
@@ -20,17 +20,22 @@ exports.createLogistics = async (req, res) => {
             return res.status(404).json({ error: 'No booking found for this user.' });
         }
 
-        const itemPrice = bookingResult[0].total_price;
+        const itemPrice = parseFloat(bookingResult[0].total_price);
         let deliveryPrice = 0;
         let finalPrice = itemPrice;
 
-        if (deliveryOption === 'delivery') {
-            // حساب سعر التوصيل
+        console.log('Delivery option:', deliveryOption);
+
+        if (deliveryOption.toLowerCase() === 'delivery') {
             deliveryPrice = calculateDeliveryPrice(pickupLocation, deliveryAddress);
-            finalPrice = itemPrice + deliveryPrice;  // التأكد من أن جمع سعر التوصيل وسعر العنصر يحدث هنا
+            finalPrice = itemPrice + deliveryPrice; // Both are numbers now
         }
 
-        // تخزين سجل اللوجستيات مع finalPrice
+        console.log('Item Price:', itemPrice);
+        console.log('Delivery Price:', deliveryPrice);
+        console.log('Final Price:', finalPrice);
+
+        // Store logistics record
         const logistics = await Logistics.createLogistics({
             userId,
             pickupLocation,
@@ -50,27 +55,38 @@ exports.createLogistics = async (req, res) => {
 
 
 
+
 // دالة لحساب المسافة أو السعر باستخدام API للخرائط
 
 const calculateDeliveryPrice = (pickupLocation, deliveryAddress) => {
     try {
-        // Extract numbers from the pickup and delivery addresses
-        const pickupNumber = parseInt(pickupLocation.match(/\d+/)[0]);
-        const deliveryNumber = parseInt(deliveryAddress.match(/\d+/)[0]);
+        const pickupMatch = pickupLocation.match(/\d+/);
+        const deliveryMatch = deliveryAddress.match(/\d+/);
 
-        // Calculate the distance based on the address numbers
+        if (!pickupMatch || !deliveryMatch) {
+            throw new Error('Pickup or Delivery address does not contain any numbers.');
+        }
+
+        const pickupNumber = parseInt(pickupMatch[0]);
+        const deliveryNumber = parseInt(deliveryMatch[0]);
+
+        if (isNaN(pickupNumber) || isNaN(deliveryNumber)) {
+            throw new Error('Parsed numbers are not valid.');
+        }
+
         const distance = Math.abs(deliveryNumber - pickupNumber);
+        const pricePerUnit = 5; // Adjust as needed
+        const deliveryPrice = Math.ceil((distance / 100) * pricePerUnit);
 
-        // Define price per unit and calculate delivery price
-        const pricePerUnit = 5; // Adjust this value as needed
-        const deliveryPrice = Math.ceil((distance / 100) * pricePerUnit); // Use Math.ceil to round up
+        console.log(`Calculated deliveryPrice: ${deliveryPrice} (Distance: ${distance})`);
 
         return deliveryPrice;
     } catch (error) {
-        console.error('Error calculating delivery price:', error);
-        return 0; // Return 0 as the default price if an error occurs
+        console.error('Error calculating delivery price:', error.message);
+        return 0; // Default to 0 if there's an error
     }
 };
+
 
 
 exports.getLogistics = async (req, res) => {

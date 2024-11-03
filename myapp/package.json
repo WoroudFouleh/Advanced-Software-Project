@@ -20,6 +20,7 @@
     "mysql2": "^3.11.3",
     "nodemailer": "^6.9.15",
     "pug": "2.0.0-beta11",
+    "querystring": "^0.2.1",
     "request-ip": "^3.3.0",
     "sequelize": "^6.37.4",
     "stripe": "^17.3.0"
