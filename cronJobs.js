@@ -1,9 +1,8 @@
-// cronJobs.js
 const cron = require('cron');
 const db = require('./db'); // تأكد أن المسار إلى قاعدة البيانات صحيح
 
 // جدولة المهمة لحذف الحجوزات القديمة وتحديث حالة القطع
-const job = new cron.CronJob('0 0 * * *', () => { // تنفذ يوميًا عند منتصف الليل
+const job = new cron.CronJob('* * * * *', () => { // تعديل هنا لتنفذ كل دقيقة
     console.log("Running scheduled job for updating item statuses and deleting expired bookings...");
 
     // تحديث حالة القطع لتكون متاحة للحجز مجددًا

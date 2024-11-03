@@ -58,12 +58,11 @@ function updateUserPoints(userId, bookingId, durationInHours) {
         });
     });
 }
-
 const createBooking = (req, res) => {
     const itemId = req.body.item_id || null;
     const userId = req.body.user_id || null;
-    const startDate = req.body.start_date || null;
-    const endDate = req.body.end_date || null;
+    const startDate = new Date(req.body.start_date) || null;
+    const endDate = new Date(req.body.end_date) || null;
     const rentalType = req.body.rentalType || null;
 
     if (!['hourly', 'daily'].includes(rentalType)) {
@@ -89,69 +88,105 @@ const createBooking = (req, res) => {
             return res.status(400).send("Booking already exists for this item in the selected time period.");
         }
 
-        // الحصول على سعر العنصر من قاعدة البيانات
-        const query = 'SELECT basePricePerHour, basePricePerDay, owner_id FROM items WHERE id = ?';
-        db.execute(query, [itemId], (error, itemResults) => {
+        // التحقق من أن الفترة ضمن الفترة المتاحة في قواعد التسعير
+        const pricingRuleQuery = `
+            SELECT * FROM pricing_rules 
+            WHERE item_id = ? 
+            AND start_date <= ? 
+            AND end_date >= ?
+            AND pricing_type = ?
+        `;
+
+        db.execute(pricingRuleQuery, [itemId, startDate, endDate, rentalType], (error, ruleResults) => {
             if (error) {
-                console.error("Database error during item price retrieval:", error);
-                return res.status(500).send("Database error during item price retrieval.");
+                console.error("Database error during pricing rule check:", error);
+                return res.status(500).send("Database error during pricing rule check.");
             }
-            if (itemResults.length === 0) {
-                return res.status(404).send("Item not found.");
+            if (ruleResults.length === 0) {
+                return res.status(400).send("The item is not available for booking in the selected period as per the owner's pricing rules.");
             }
 
-            const { basePricePerHour, basePricePerDay, owner_id: ownerId } = itemResults[0];
+            const { min_rental_period_days, min_rental_period_hours } = ruleResults[0];
 
-            // حساب السعر الكلي، رسوم المنصة، والإيرادات الكلية ومدة الحجز بالساعات
-            const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay, rentalType);
+            const bookingDurationInHours = (endDate - startDate) / (1000 * 60 * 60);
+            const bookingDurationInDays = bookingDurationInHours / 24;
 
-            // استرجاع الخصومات الخاصة بالعنصر
-            discountModel.getDiscountsByItemId(itemId, (error, discounts) => {
+            if ((rentalType === 'daily' && bookingDurationInDays < min_rental_period_days) ||
+                (rentalType === 'hourly' && bookingDurationInHours < min_rental_period_hours)) {
+                return res.status(400).send(`The booking duration does not meet the minimum requirement. For daily rentals, the minimum is ${min_rental_period_days} days. For hourly rentals, the minimum is ${min_rental_period_hours} hours.`);
+            }
+
+            const query = 'SELECT basePricePerHour, basePricePerDay, owner_id FROM items WHERE id = ?';
+            db.execute(query, [itemId], (error, itemResults) => {
                 if (error) {
-                    console.error("Error fetching discounts:", error);
-                    return res.status(500).send("Error fetching discounts.");
+                    console.error("Database error during item price retrieval:", error);
+                    return res.status(500).send("Database error during item price retrieval.");
+                }
+                if (itemResults.length === 0) {
+                    return res.status(404).send("Item not found.");
                 }
 
-                // حساب الخصم الكلي
-                let totalDiscount = 0;
-                discounts.forEach(discount => {
-                    if (discount.discount_type === 'fixed') {
-                        totalDiscount += discount.discount_value; // خصم ثابت
-                    } else if (discount.discount_type === 'percentage') {
-                        totalDiscount += (totalPrice * discount.discount_value) / 100; // خصم كنسبة مئوية
-                    }
-                });
+                const { basePricePerHour, basePricePerDay, owner_id: ownerId } = itemResults[0];
 
-                // تطبيق الخصم على السعر الكلي
-                const discountedTotalPrice = totalPrice - totalDiscount;
+                const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay, rentalType);
 
-                // إدخال الحجز مع الخصم ورسوم المنصة والإيرادات في قاعدة البيانات
-                const insertQuery = `
-                    INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_amount) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `;
-                db.execute(insertQuery, [itemId, userId, startDate, endDate, discountedTotalPrice, platformFee, totalRevenue, totalDiscount], (error, result) => {
+                discountModel.getDiscountsByItemId(itemId, (error, discounts) => {
                     if (error) {
-                        console.error("Error creating booking:", error);
-                        return res.status(500).send("Error creating booking.");
+                        console.error("Error fetching discounts:", error);
+                        return res.status(500).send("Error fetching discounts.");
                     }
 
-                    const bookingId = result.insertId;
+                    let totalDiscount = 0;
+                    discounts.forEach(discount => {
+                        if (discount.discount_type === 'fixed') {
+                            totalDiscount += discount.discount_value;
+                        } else if (discount.discount_type === 'percentage') {
+                            totalDiscount += (totalPrice * discount.discount_value) / 100;
+                        }
+                    });
 
-                    // تحديث نقاط المستخدم بعد إنشاء الحجز
-                    updateUserPoints(userId, bookingId, durationInHours);
+                    const discountedTotalPrice = totalPrice - totalDiscount;
 
-                    // إرسال الإشعار إلى المالك
-                    const notificationMessage = `User ${userId} has booked your item ${itemId} from ${startDate} to ${endDate}.`;
-                    sendNotificationToOwner(ownerId, notificationMessage, itemId, userId);
+                    const insertQuery = `
+                        INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_amount) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `;
+                    db.execute(insertQuery, [itemId, userId, startDate, endDate, discountedTotalPrice, platformFee, totalRevenue, totalDiscount], (error, result) => {
+                        if (error) {
+                            console.error("Error creating booking:", error);
+                            return res.status(500).send("Error creating booking.");
+                        }
 
-                    res.status(201).json({
-                        message: "Booking created successfully.",
-                        originalTotalPrice: totalPrice,
-                        totalDiscount,
-                        finalTotalPrice: discountedTotalPrice,
-                        platformFee,
-                        totalRevenue
+                        const bookingId = result.insertId;
+
+                        // تحديث حالة العنصر إلى "محجوز" وتخزين الحالة السابقة
+                        const updateItemStatusQuery = `
+                            UPDATE items 
+                            SET previous_status = status, status = 'booked' 
+                            WHERE id = ?
+                        `;
+                        db.execute(updateItemStatusQuery, [itemId], (error) => {
+                            if (error) {
+                                console.error("Error updating item status:", error);
+                                return res.status(500).send("Error updating item status.");
+                            }
+
+                            // تحديث نقاط المستخدم بعد إنشاء الحجز
+                            updateUserPoints(userId, bookingId, durationInHours);
+
+                            // إرسال الإشعار إلى المالك
+                            const notificationMessage = `User ${userId} has booked your item ${itemId} from ${startDate} to ${endDate}.`;
+                            sendNotificationToOwner(ownerId, notificationMessage, itemId, userId);
+
+                            res.status(201).json({
+                                message: "Booking created successfully.",
+                                originalTotalPrice: totalPrice,
+                                totalDiscount,
+                                finalTotalPrice: discountedTotalPrice,
+                                platformFee,
+                                totalRevenue
+                            });
+                        });
                     });
                 });
             });
@@ -443,6 +478,7 @@ const getBookingStatistics = (req, res) => {
 // تصدير الدوال
 module.exports = {
     createBooking,
+    getDiscountPercentage,
     getAllBookings,
     getBookingById,
     updateBooking,

@@ -83,7 +83,13 @@ const checkPermissions = (req, res, next) => {
             } 
             else if (req.method === 'GET' &&  req.path.startsWith('/getPricingRuleById/')) {
                 next();
+            }
+            else if (req.method === 'POST' && req.path ==='/addDiscount') {
+                next();
             } 
+            else if (req.method === 'GET' &&  req.path.startsWith('/discounts/')) {
+                next();
+            }
             else if (req.method === 'PUT' &&  req.path.startsWith('/update_pricing_rule/')) {
                 next();
             } 
