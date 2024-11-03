@@ -2,6 +2,8 @@
 const itemModel = require('../models/Items');
 const db = require('../db');
 
+
+
 // دالة إنشاء عنصر
 exports.createItem = (req, res) => {
   const itemData = req.body;
@@ -21,19 +23,28 @@ exports.createItem = (req, res) => {
 };
 
 // دالة استرجاع جميع العناصر
-exports.getAllItems = (req, res) => {
-  itemModel.getAllItems((error, items) => {
-    if (error) {
-      return res.status(500).json({ error: 'Error retrieving items' });
-    }
-    res.status(200).json(items);
-  });
+exports.getAllItems = async (req, res) => {
+  const userRole = req.user.role; // افتراض أن role موجود في التوكن
+  const username = req.user.username; // افتراض أن اسم المستخدم موجود في التوكن
+  
+    
+    itemModel.getAllItems(userRole, username, (error, items) => {
+      if (error) {
+        return res.status(500).json({ error: 'Error retrieving items' });
+      }
+      res.status(200).json(items);
+    });
+  
 };
+
 
 // دالة استرجاع عنصر معين باستخدام ID
 exports.getItemById = (req, res) => {
   const itemId = req.params.id;
-  itemModel.getItemById(itemId, (error, item) => {
+  const userRole = req.user.role;
+  const username = req.user.username;
+
+  itemModel.getItemById(itemId, userRole, username, (error, item) => {
     if (error) {
       return res.status(500).json({ error: 'Error retrieving item' });
     }
@@ -43,7 +54,6 @@ exports.getItemById = (req, res) => {
     res.status(200).json(item);
   });
 };
-
 // تحديث عنصر
 exports.updateItem = (req, res) => {
     const itemId = req.params.id;

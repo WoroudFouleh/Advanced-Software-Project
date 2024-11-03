@@ -1,13 +1,12 @@
 const db = require("../db");
 
-
-// وظيفة لإنشاء قاعدة تسعير جديدة
+// دالة لإنشاء قاعدة تسعير جديدة
 const createPricingRule = (pricingRule, callback) => {
     const query = `
         INSERT INTO pricing_rules 
-        (item_id, pricing_type, rate, min_rental_period_days, min_rental_period_hours, start_date, end_date, discount,   discount_condition_id, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
+        (item_id, pricing_type, rate, min_rental_period_days, min_rental_period_hours, start_date, end_date, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`; 
+
     db.query(query, [
         pricingRule.item_id,
         pricingRule.pricing_type,
@@ -16,52 +15,116 @@ const createPricingRule = (pricingRule, callback) => {
         pricingRule.min_rental_period_hours,
         pricingRule.start_date,
         pricingRule.end_date,
-        pricingRule.discount,
-        pricingRule.discount_condition_id,
         pricingRule.created_by
     ], callback);
 };
 
-// وظيفة للحصول على جميع قواعد التسعير
-const getAllPricingRules = (callback) => {
-    const query = 'SELECT * FROM pricing_rules';
-    db.query(query, callback);
+// دالة للحصول على جميع قواعد التسعير
+const getAllPricingRules = (userId, userRole, callback) => {
+    let query;
+    const params = [];
+
+    if (userRole.toLowerCase() === 'admin') {
+        // إذا كان المستخدم مدير، أحضر جميع القواعد
+        query = 'SELECT * FROM pricing_rules';
+    } else if (userRole.toLowerCase() === 'owner') {
+        // إذا كان المستخدم مالك، أحضر القواعد الخاصة به فقط
+        query = 'SELECT * FROM pricing_rules WHERE created_by = ?';
+        params.push(userId);
+    } else {
+        return callback(new Error("Access denied. Invalid user role."), null);
+    }
+
+    // تنفيذ الاستعلام
+    db.query(query, params, callback);
+};
+// دالة للحصول على قاعدة تسعير واحدة بناءً على معرف القاعدة
+const getPricingRuleById = (userId, userRole, id, callback) => {
+    let query;
+    const params = [id];
+
+    if (userRole.toLowerCase() === 'admin') {
+        // إذا كان المستخدم مديرًا، يمكنه الوصول إلى أي قاعدة تسعير
+        query = 'SELECT * FROM pricing_rules WHERE id = ?';
+    } else if (userRole.toLowerCase() === 'owner') {
+        // إذا كان المستخدم مالكًا، يمكنه الوصول فقط إلى القواعد التي أنشأها
+        query = 'SELECT * FROM pricing_rules WHERE id = ? AND created_by = ?';
+        params.push(userId);
+    } else {
+        // إذا كان الدور غير صالح، اعد خطأً بالصلاحيات
+        return callback(new Error("Access denied. Invalid user role."), null);
+    }
+
+    // تنفيذ الاستعلام
+    db.query(query, params, callback);
 };
 
-// وظيفة للحصول على قاعدة تسعير واحدة بناءً على المعرف
-const getPricingRuleById = (id, callback) => {
-    const query = 'SELECT * FROM pricing_rules WHERE id = ?';
-    db.query(query, [id], callback);
+const updatePricingRule = (id, userId, userRole, updatedRule, callback) => {
+    // تحقق من وجود created_by و item_id
+    if (!updatedRule.created_by) {
+        return callback(new Error("created_by must be provided."));
+    }
+
+    const getCurrentRuleQuery = `SELECT * FROM pricing_rules WHERE id = ?`;
+    db.query(getCurrentRuleQuery, [id], (err, results) => {
+        if (err) return callback(err);
+        if (results.length === 0) return callback(new Error("Pricing rule not found."));
+
+        const currentRule = results[0];
+        const query = `
+            UPDATE pricing_rules 
+            SET pricing_type = ?, rate = ?, min_rental_period_days = ?, min_rental_period_hours = ?, start_date = ?, end_date = ?
+            WHERE id = ?`;
+
+        const params = [
+            updatedRule.pricing_type || currentRule.pricing_type, // إذا لم يتم تعديل القيمة، استخدم القيمة القديمة
+            updatedRule.rate || currentRule.rate,
+            updatedRule.min_rental_period_days || currentRule.min_rental_period_days,
+            updatedRule.min_rental_period_hours || currentRule.min_rental_period_hours,
+            updatedRule.start_date || currentRule.start_date,
+            updatedRule.end_date || currentRule.end_date,
+            id
+        ];
+
+        if (userRole.toLowerCase() === 'admin') {
+            params.unshift(currentRule.item_id); // أضف item_id كقيمة ثابتة في حالة الإداري
+            db.query(`
+                UPDATE pricing_rules 
+                SET item_id = ?, pricing_type = ?, rate = ?, min_rental_period_days = ?, min_rental_period_hours = ?, start_date = ?, end_date = ?, created_by = ?
+                WHERE id = ?`, 
+                [...params, updatedRule.created_by, id], 
+                callback);
+        } else if (userRole.toLowerCase() === 'owner' && currentRule.created_by === userId) {
+            // تأكد من أن المستخدم هو مالك القاعدة
+            db.query(query, params, callback);
+        } else {
+            return callback(new Error("Access denied. You can only update your own pricing rules."));
+        }
+    });
 };
 
-// وظيفة لتحديث قاعدة التسعير
-const updatePricingRule = (id, pricingRule, callback) => {
-    const query = `
-        UPDATE pricing_rules 
-        SET item_id = ?, pricing_type = ?, rate = ?, min_rental_period_days = ?, min_rental_period_hours = ?, start_date = ?, end_date = ?, discount = ?, discount_condition = ?, created_by = ?
-        WHERE id = ?`;
-    
-    db.query(query, [
-        pricingRule.item_id,
-        pricingRule.pricing_type,
-        pricingRule.rate,
-        pricingRule.min_rental_period_days,
-        pricingRule.min_rental_period_hours,
-        pricingRule.start_date,
-        pricingRule.end_date,
-        pricingRule.discount,
-        pricingRule.discount_condition,
-        pricingRule.created_by,
-        id
-    ], callback);
-};
+const deletePricingRule = (userId, userRole, id, callback) => {
+    let query;
+    const params = [id];
 
-// وظيفة لحذف قاعدة تسعير
-const deletePricingRule = (id, callback) => {
-    const query = 'DELETE FROM pricing_rules WHERE id = ?';
-    db.query(query, [id], callback);
-};
+    if (userRole.toLowerCase() === 'admin') {
+        query = 'DELETE FROM pricing_rules WHERE id = ?';
+    } else if (userRole.toLowerCase() === 'owner') {
+        query = 'DELETE FROM pricing_rules WHERE id = ? AND created_by = ?';
+        params.push(userId);
+    } else {
+        return callback(new Error("Access denied. Invalid user role."), null);
+    }
 
+    // تنفيذ الاستعلام
+    db.query(query, params, (err, results) => {
+        if (err) return callback(err);
+        if (results.affectedRows === 0) {
+            return callback(new Error("No pricing rule found to delete or not authorized"));
+        }
+        callback(null); // تم الحذف بنجاح
+    });
+};
 module.exports = {
     createPricingRule,
     getAllPricingRules,
@@ -69,82 +132,3 @@ module.exports = {
     updatePricingRule,
     deletePricingRule
 };
-
-/*
-const pricingRules = {
-    create: (pricingData, user, callback) => {
-        if (user.role !== 'owner') {
-            console.log("Permission denied: User with role '" + user.role + "' tried to create a pricing rule.");
-            return callback(new Error("Only the owner can create pricing rules."));
-        }
-        
-
-        const { item_id, pricing_type, discount_rate, min_rental_period_days, start_date, end_date, season_id } = pricingData;
-        if (!item_id || !pricing_type || !min_rental_period_days || !start_date || !end_date) {
-            return callback(new Error("All fields are required."));
-        }
-
-        const query = `
-            INSERT INTO pricing_rules (item_id, pricing_type, discount_rate, min_rental_period_days, start_date, end_date, season_id, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-
-        db.execute(query, [item_id, pricing_type, discount_rate, min_rental_period_days, start_date, end_date, season_id, user.id], (error, result) => {
-            if (error) return callback(error);
-            callback(null, result);
-        });
-    },
-
-    update: (id, pricingData, user, callback) => {
-        if (user.role !== 'owner' && user.role !== 'admin') {
-            return callback(new Error("Only the owner or admin can update pricing rules."));
-        }
-
-        const { item_id, pricing_type, discount_rate, min_rental_period_days, start_date, end_date, season_id } = pricingData;
-
-        const query = `
-            UPDATE pricing_rules
-            SET item_id = ?, pricing_type = ?, discount_rate = ?, min_rental_period_days = ?, start_date = ?, end_date = ?, season_id = ?
-            WHERE id = ?
-        `;
-
-        db.execute(query, [item_id, pricing_type, discount_rate, min_rental_period_days, start_date, end_date, season_id, id], (error, results) => {
-            if (error) return callback(error);
-            callback(null, results);
-        });
-    },
-
-    getAll: (user, callback) => {
-        if (user.role !== 'owner' && user.role !== 'admin') {
-            return callback(new Error("Only the owner or admin can view pricing rules."));
-        }
-
-        const query = 'SELECT * FROM pricing_rules';
-        db.execute(query, (error, results) => {
-            if (error) return callback(error);
-            callback(null, results);
-        });
-    },
-
-    getById: (id, callback) => {
-        const query = 'SELECT * FROM pricing_rules WHERE id = ?';
-        db.execute(query, [id], (error, results) => {
-            if (error) return callback(error);
-            callback(null, results);
-        });
-    },
-
-    delete: (id, user, callback) => {
-        if (user.role !== 'owner' && user.role !== 'admin') {
-            return callback(new Error("Only the owner or admin can delete pricing rules."));
-        }
-
-        const query = 'DELETE FROM pricing_rules WHERE id = ?';
-        db.execute(query, [id], (error, results) => {
-            if (error) return callback(error);
-            callback(null, results);
-        });
-    },
-};
-
-module.exports = pricingRules;*/

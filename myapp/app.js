@@ -1,6 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
+const path = require('path');
+const dotenv = require('dotenv'); // قم بإضافة هذا السطر لتحميل dotenv
+
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const connection = require('./db'); // الاتصال بقاعدة البيانات من ملف db.js
 const authRoute = require('./routes/auth'); // مسار تسجيل الدخول
 const userRoute = require('./routes/userRoutes'); // مسار المستخدمين
@@ -21,6 +24,7 @@ const RatingRoute= require('./routes/Rating');
 const logisticsRoutes = require('./routes/logistics');
 const cartRoutes = require('./routes/cartRoutes'); // استيراد مسارات السلة
 const requestIp = require('request-ip');
+require('./cronJobs');
 
 
 const app = express();
@@ -53,7 +57,7 @@ console.log("statistics Routes Loaded");
 app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount levels routes
 app.use('/api/user-points-history', userPointsHistoryRoutes);
 // إعداد مسارات الرسائل
-app.use('/api3', messageRoutes);
+app.use('/api', messageRoutes);
 
 
 app.use('/api', insuranceRoutes);
