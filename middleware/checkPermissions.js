@@ -21,20 +21,33 @@ const checkPermissions = (req, res, next) => {
         req.user = user;
 
         console.log("Path:", req.path); // يعرض المسار في وحدة التحكم
-    console.log("User Role:", req.user.role); // يعرض الدور للتحقق منه
+       console.log("User Role:", req.user.role); // يعرض الدور للتحقق منه
     
     if (req.path === '/messages/sendReply') {
         return next();
     }
         // تحقق من صلاحيات المستخدم
-        if (user.role === 'admin') {
+        if (user.role.toLowerCase() === 'admin')
+         {
             if (req.path.startsWith('/messages')) {
                 return res.status(403).send("Admin does not have access to messages.");
+            }
+            else if (req.method === 'GET' && req.path === '/getPricingRuleById/') {
+                next();
+            } 
+            else if (req.method === 'POST' && req.path === '/add_pricing_rule') {
+                next();
+            }
+            else if (req.method === 'GET' && req.path === '/list_pricing_rules') {
+                next();
+            }
+            else if (req.method === 'DELETE' &&  req.path ==='/deletePricingRule/') {
+                next();
             }
             else{
                 next();
             }
-        } else if (user.role === 'owner') {
+        } else if (user.role.toLowerCase() === 'owner') {
             // صلاحيات الـ owner
             if (req.path.startsWith('/messages')&& req.method === 'POST' ) {
                 const { receiverRole } = req.body;
@@ -44,15 +57,12 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You can only message users.");
             }
             
-          
-            if (req.method === 'GET' && req.path === '/list_pricing_rules') {
-                next();
-            }
             if (req.path.startsWith('/messages')&& req.method === 'GET' ) {
                 
                     return next();
                 
             }
+            
             if (req.path.startsWith('/api/user-points-history')) {
                 return res.status(403).send("You do not have permission to access statistics.");
             }
@@ -70,15 +80,28 @@ const checkPermissions = (req, res, next) => {
             }
              else if (req.method === 'POST' && req.path === '/additems') {
                 next();
-            } else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
+            } 
+            else if (req.method === 'GET' &&  req.path.startsWith('/getPricingRuleById/')) {
                 next();
             } 
-            else if (req.method === 'POST' && req.path.startsWith('/add_pricing_rule/')) {
+            else if (req.method === 'PUT' &&  req.path.startsWith('/update_pricing_rule/')) {
+                next();
+            } 
+            else if (req.method === 'DELETE' &&  req.path.startsWith('/deletePricingRule/')) {
+                next();
+            }
+            else if (req.method === 'PUT' && req.path.startsWith('/updateItems/')) {
                 next();
             }  
+            else if (req.method === 'POST' && req.path === '/add_pricing_rule') {
+                next();
+            }
             else if (req.method === 'PUT' && req.path.startsWith('/updateBooking/')) {
                 next();
             } 
+            else if (req.method === 'GET' && req.path === '/list_pricing_rules') {
+                next();
+            }
             else if (req.method === 'DELETE' && req.path.startsWith('/deleteBooking/')) {
                 next();
             }else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
@@ -94,7 +117,7 @@ const checkPermissions = (req, res, next) => {
             } else if (req.method === 'DELETE' && req.path === '/profile') {
                 next();
             } else {
-                return res.status(403).send("You do not have permission to perform this action.");
+                return res.status(403).send("Access denied. You must be an owner to perform this action.");
             }
         } 
         else if (user.role === 'user') {
