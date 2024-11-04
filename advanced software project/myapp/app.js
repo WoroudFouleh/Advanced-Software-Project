@@ -11,6 +11,13 @@ const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  // Adjust the path as needed
 const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
 const insuranceRoutes = require('./routes/insuranceRoutes');
+const rentalPeriodRoutes= require('./routes/rentalRoutes');
+const pricingRulesRoute = require('./routes/pricingRulesRoute');
+const notificationsRoutes = require('./routes/notificationsRoutes');
+const discountRoutes = require('./routes/discountRoutes');
+
+const seasonRoutes = require('./routes/seasonRoutes');
+
 const app = express();
 app.use(express.json());
 
@@ -32,6 +39,25 @@ console.log("Item Routes Loaded");
 app.use('/api', bookingRoutes);
 console.log("Booking Routes Loaded"); 
 // تحديد منفذ الاستماع للخادم
+
+
+app.use('/api/rentalPeriods', rentalPeriodRoutes);
+console.log("Rental Period Routes Loaded");
+
+
+app.use('/api/season', seasonRoutes);
+console.log("season Routes Loaded"); 
+
+app.use('/api', discountRoutes);
+
+app.use('/api', pricingRulesRoute)
+console.log("Pricing Rules Routes Loaded");
+
+app.use('/api/notifications', notificationsRoutes);
+
+
+
+
 app.use('/api/statistics', statisticsRoutes);
 console.log("statistics Routes Loaded"); 
 app.use('/api/discount-levels', discountLevelRoutes);  // Integrate the discount levels routes

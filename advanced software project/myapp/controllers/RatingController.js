@@ -1,6 +1,6 @@
 const User = require('../models/userModel');
 const Item = require('../models/Items');
-const createConnection = require('../db');
+const connection = require('../db');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
@@ -23,10 +23,7 @@ module.exports = {
             return res.status(403).json({ message: 'Not authorized to perform this action.' });
         }
 
-        let connection;
         try {
-            connection = await createConnection();
-
             // Check if the item exists
             const [itemResults] = await connection.execute(
                 `SELECT * FROM items WHERE id = ?`, [itemId]
@@ -71,8 +68,6 @@ module.exports = {
         } catch (error) {
             console.error('Caught error:', error);
             res.status(500).json({ status: false, message: error.message });
-        } finally {
-            if (connection) connection.end();
         }
     },
 
@@ -85,10 +80,7 @@ module.exports = {
             return res.status(403).json({ message: 'Not authorized to perform this action.' });
         }
 
-        let connection;
         try {
-            connection = await createConnection();
-
             const [reviewResults] = await connection.execute(
                 `SELECT * FROM reviews WHERE username = ? AND itemId = ?`, [username, itemId]
             );
@@ -105,8 +97,6 @@ module.exports = {
         } catch (error) {
             console.error('Caught error:', error);
             res.status(500).json({ status: false, message: error.message });
-        } finally {
-            if (connection) connection.end();
         }
     },
 
@@ -117,10 +107,7 @@ module.exports = {
             return res.status(403).json({ message: 'Not authorized to perform this action.' });
         }
 
-        let connection;
         try {
-            connection = await createConnection();
-
             const [reviewsResults] = await connection.execute(`
                 SELECT r.reviewerId, r.username, r.itemId, r.rating, r.comment, i.name AS itemName, i.description AS itemDescription 
                 FROM reviews r
@@ -135,8 +122,6 @@ module.exports = {
         } catch (error) {
             console.error('Caught error:', error);
             res.status(500).json({ status: false, message: error.message });
-        } finally {
-            if (connection) connection.end();
         }
     },
 
@@ -148,10 +133,7 @@ module.exports = {
             return res.status(403).json({ message: 'Not authorized to perform this action.' });
         }
 
-        let connection;
         try {
-            connection = await createConnection();
-
             const [reviewResults] = await connection.execute(
                 `SELECT * FROM reviews WHERE reviewerId = ? AND itemId = ?`, [reviewerId, itemId]
             );
@@ -168,8 +150,6 @@ module.exports = {
         } catch (error) {
             console.error('Caught error:', error);
             res.status(500).json({ status: false, message: error.message });
-        } finally {
-            if (connection) connection.end();
         }
     },
 
@@ -182,10 +162,7 @@ module.exports = {
             return res.status(403).json({ message: 'Only users can update reviews.' });
         }
 
-        let connection;
         try {
-            connection = await createConnection();
-
             const [reviewResults] = await connection.execute(
                 `SELECT * FROM reviews WHERE username = ? AND itemId = ?`, [username, itemId]
             );
@@ -203,18 +180,13 @@ module.exports = {
         } catch (error) {
             console.error('Caught error:', error);
             res.status(500).json({ status: false, message: error.message });
-        } finally {
-            if (connection) connection.end();
         }
     },
 
     getRatingsByItemId: async (req, res) => {
         const { itemId } = req.body;
 
-        let connection;
         try {
-            connection = await createConnection();
-
             const [itemResults] = await connection.execute(
                 `SELECT name, description FROM items WHERE id = ?`, [itemId]
             );
@@ -242,4 +214,3 @@ module.exports = {
         }
     },
 };
-

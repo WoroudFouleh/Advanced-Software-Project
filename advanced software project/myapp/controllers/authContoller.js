@@ -49,11 +49,16 @@ exports.login = (req, res) => {
                     return res.status(500).json({ message: 'Error saving token' });
                 }
 
-                res.json({ token });
+                // إرجاع الـ token ورسالة الترحيب في الاستجابة
+                res.json({
+                    message: 'Welcome to RentItOut platform',
+                    token: token
+                });
             });
         });
     });
 };
+
 // طلب إعادة تعيين كلمة المرور
 exports.requestPasswordReset = (req, res) => {
     const { username } = req.body; // استخدام اسم المستخدم بدلاً من البريد الإلكتروني

@@ -81,14 +81,17 @@ const createBooking = async (req, res) => {
         const startDate = req.body.start_date || null;
         const endDate = req.body.end_date || null;
         const idnumber = req.body.idnumber || null;
-        
-        const isValidIdNumber = (idNumber) => {
-            if (typeof idNumber === 'string' && idNumber.trim() !== '') {
-                const isValid = /^PAL\d{4}$/.test(idNumber.trim());
-                return isValid;
-            }
-            return false;
+        const rentalType = req.body.rentalType || null;
+
+        const isValidIdNumber = (idnumber) => {
+            return typeof idnumber === 'string' && idnumber.trim() !== '' && /^PAL\d{4}$/.test(idnumber.trim());
         };
+        
+        if (idnumber && !isValidIdNumber(idnumber)) {
+            return res.status(400).send("Invalid ID number format.");
+        }
+
+     
         // Check for overlapping bookings
         const checkQuery = `
             SELECT * FROM bookings 
