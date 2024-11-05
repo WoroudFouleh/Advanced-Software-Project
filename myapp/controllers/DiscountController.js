@@ -1,3 +1,4 @@
+//DiscountController.js
 const discountModel = require('../models/DiscountModel');
 
 // Function to add a new discount

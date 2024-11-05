@@ -42,11 +42,13 @@ const User = {
             SET 
                 username = COALESCE(?, username), 
                 password = COALESCE(?, password), 
+                email = COALESCE(?, email), 
+
                 role = COALESCE(?, role) 
             WHERE id = ?
         `;
     
-        const values = [updates.username || null, updates.password || null, updates.role || null, userId];
+        const values = [updates.username || null, updates.password || null,updates.email || null,  updates.role || null, userId];
     
         db.query(query, values, (error, results) => {
             if (error) {

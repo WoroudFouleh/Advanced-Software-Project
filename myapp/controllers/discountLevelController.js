@@ -1,3 +1,4 @@
+//discountLevelController.js
 const db = require('../db');  // Adjust the path as needed
 
 const DiscountLevel = require('../models/discountLevelModel');  // Adjust the path as needed

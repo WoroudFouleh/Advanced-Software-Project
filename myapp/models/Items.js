@@ -3,21 +3,21 @@ const mysql = require('mysql2');
 const connection = require('../db'); // Ensure the path is correct
 
 exports.createItem = (itemData, callback) => {
-  const { name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id, imageURL } = itemData;
+  const { name, category, description, basePricePerDay, basePricePerHour, username, status, imageURL } = itemData;
   // تحقق من القيم المطلوبة
-  if (!name || !category || !description || basePricePerDay === undefined || !username || !status || !owner_id || !imageURL) {
-      return callback(new Error("All fields are required."));
+  if (!name || !category || !description || basePricePerDay === undefined || !username || !status  || !imageURL) {
+      return callback(new Error("All fields are required (name, category, description, basePricePerDay, basePricePerHour, status, imageURL )."));
   }
 
   // تنفيذ الاستعلام
   const query = `
-      INSERT INTO items (name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id, imageURL)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO items (name, category, description, basePricePerDay, basePricePerHour, username, status, imageURL)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   connection.execute(
       query,
-      [name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id,imageURL],
+      [name, category, description, basePricePerDay, basePricePerHour, username, status,imageURL],
       (error, result) => {
           if (error) return callback(error);
           callback(null, result);
@@ -60,38 +60,36 @@ exports.getItemById = (id, role, username, callback) => {
 };
 
 // تحديث عنصر
-exports.updateItem = (id, itemData, callback) => {
+exports.updateItem = (id, itemData, role, username, callback) => {
   // جلب البيانات الحالية للعنصر
-  exports.getItemById(id, (error, existingItem) => {
-    if (error || !existingItem) {
-      return callback(new Error("Item not found"));
-    }
-
-    // تحديد القيم النهائية باستخدام البيانات الجديدة أو الحالية
-    const name = itemData.name || existingItem.name;
-    const category = itemData.category || existingItem.category;
-    const description = itemData.description || existingItem.description;
-    const basePricePerDay = itemData.basePricePerDay !== undefined ? itemData.basePricePerDay : existingItem.basePricePerDay;
-    const basePricePerHour = itemData.basePricePerHour !== undefined ? itemData.basePricePerHour : existingItem.basePricePerHour;
-    const username = itemData.username || existingItem.username;
-    const status = itemData.status || existingItem.status;
-    const owner_id = itemData.owner_id || existingItem.owner_id;
-    const imageURL = itemData.imageURL || existingItem.imageURL;
-
-    const query = `
-      UPDATE items
-      SET name = ?, category = ?, description = ?, basePricePerDay = ?, basePricePerHour = ?, username = ?, status = ?, owner_id = ?, imageURL = ?
-      WHERE id = ?
-    `;
-
-    connection.execute(
-      query,
-      [name, category, description, basePricePerDay, basePricePerHour, username, status, owner_id, imageURL, id],
-      (error, results) => {
-        if (error) return callback(error);
-        callback(null, results);
+  exports.getItemById(id, role, username, (error, existingItem) => {
+      if (error || !existingItem) {
+          return callback(new Error("Item not found"));
       }
-    );
+
+      // تحديد القيم النهائية باستخدام البيانات الجديدة أو الحالية
+      const name = itemData.name || existingItem.name;
+      const category = itemData.category || existingItem.category;
+      const description = itemData.description || existingItem.description;
+      const basePricePerDay = itemData.basePricePerDay !== undefined ? itemData.basePricePerDay : existingItem.basePricePerDay;
+      const basePricePerHour = itemData.basePricePerHour !== undefined ? itemData.basePricePerHour : existingItem.basePricePerHour;
+      const status = itemData.status || existingItem.status;
+      const imageURL = itemData.imageURL || existingItem.imageURL;
+
+      const query = `
+          UPDATE items
+          SET name = ?, category = ?, description = ?, basePricePerDay = ?, basePricePerHour = ?, status = ?, imageURL = ?
+          WHERE id = ?
+      `;
+
+      connection.execute(
+          query,
+          [name, category, description, basePricePerDay, basePricePerHour, status, imageURL, id],
+          (error, results) => {
+              if (error) return callback(error);
+              callback(null, results);
+          }
+      );
   });
 };
 

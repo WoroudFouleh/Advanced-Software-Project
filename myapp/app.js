@@ -35,6 +35,7 @@ dotenv.config(); // تحميل الإعدادات من ملف .env
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use(requestIp.mw())
 
 
 

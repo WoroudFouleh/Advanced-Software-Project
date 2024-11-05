@@ -18,12 +18,12 @@ exports.deleteUser = (req, res) => {
     });
 };
 exports.addUser = (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password, email, role } = req.body;
 
     bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) return res.status(500).json({ message: 'Error hashing password' });
 
-        User.create(username, hashedPassword, role, (error) => {
+        User.create(username, hashedPassword, email, role, (error) => {
             if (error) return res.status(500).json({ message: 'Error creating user' });
             res.status(201).json({ message: 'User created successfully' });
         });
@@ -32,7 +32,7 @@ exports.addUser = (req, res) => {
 
 exports.updateUser = (req, res) => {
     const userId = req.params.id;
-    const { username, password } = req.body;
+    const { username, password, role, email} = req.body;
 
     // قم بإنشاء مصفوفة لحفظ القيم التي سيتم تحديثها
     const fields = [];
@@ -48,7 +48,14 @@ exports.updateUser = (req, res) => {
         fields.push('password = ?');
         values.push(hashedPassword);
     }
-
+    if (role) {
+        fields.push('role = ?');
+        values.push(role);
+    }
+    if (email) {
+        fields.push('email = ?');
+        values.push(email);
+    }   
     if (fields.length === 0) {
         return res.status(400).json({ message: 'No fields to update' });
     }

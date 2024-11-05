@@ -1,3 +1,4 @@
+//rentalPeriodController.js
 const RentalPeriod = require('../models/RentalPeriod');
 
 // إنشاء فترة إيجار

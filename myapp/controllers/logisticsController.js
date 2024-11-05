@@ -1,3 +1,4 @@
+//logisticsController.js
 const Logistics = require('../models/LogisticsTemp');
 const axios = require('axios');
 const connection = require('../db');  // قم بتعديل المسار إذا كان ملف db في مكان مختلف

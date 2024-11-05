@@ -54,28 +54,18 @@ exports.getItemById = (req, res) => {
     res.status(200).json(item);
   });
 };
-// تحديث عنصر
 exports.updateItem = (req, res) => {
-    const itemId = req.params.id;
-    const itemData = req.body;
+  const itemId = req.params.id;
+  const itemData = req.body;
+  const userRole = req.user.role;
+  const username = req.user.username;
 
-    // أولاً، استرجع العنصر للتحقق من ملكيته
-    itemModel.getItemById(itemId, (error, item) => {
-        if (error || !item) {
-            return res.status(404).json({ error: 'Item not found' });
-        }
-        if (item.username !== req.user.username) {
-            return res.status(403).json({ error: 'You do not have permission to update this item.' });
-        }
-
-        // إذا كان المالك صحيحًا، تابع التحديث
-        itemModel.updateItem(itemId, itemData, (error, result) => {
-            if (error) {
-                return res.status(500).json({ error: 'Error updating item' });
-            }
-            res.status(200).json({ message: 'Item updated successfully', result });
-        });
-    });
+  itemModel.updateItem(itemId, itemData, userRole, username, (error, result) => {
+      if (error) {
+          return res.status(500).json({ error: 'Error updating item', details: error.message });
+      }
+      res.status(200).json({ message: 'Item updated successfully', result });
+  });
 };
 
 // حذف عنصر
@@ -83,21 +73,21 @@ exports.deleteItem = (req, res) => {
     const itemId = req.params.id;
 
     // أولاً، استرجع العنصر للتحقق من ملكيته
-    itemModel.getItemById(itemId, (error, item) => {
-        if (error || !item) {
-            return res.status(404).json({ error: 'Item not found' });
+    itemModel.getItemById(itemId, req.user.role, req.user.username, (error, item) => {
+      if (error || !item) {
+        return res.status(404).json({ error: 'Item not found' });
+      }
+      if (item.username !== req.user.username) {
+        return res.status(403).json({ error: 'You do not have permission to delete this item.' });
+      }
+    
+      // Proceed to delete if the owner is correct
+      itemModel.deleteItem(itemId, (error, result) => {
+        if (error) {
+          return res.status(500).json({ error: 'Error deleting item' });
         }
-        if (item.username !== req.user.username) {
-            return res.status(403).json({ error: 'You do not have permission to delete this item.' });
-        }
-
-        // إذا كان المالك صحيحًا، تابع الحذف
-        itemModel.deleteItem(itemId, (error, result) => {
-            if (error) {
-                return res.status(500).json({ error: 'Error deleting item' });
-            }
-            res.status(200).json({ message: 'Item deleted successfully', result });
-        });
+        res.status(200).json({ message: 'Item deleted successfully', result });
+      });
     });
 };
 
