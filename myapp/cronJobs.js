@@ -1,11 +1,9 @@
 const cron = require('cron');
-const db = require('./db'); // تأكد أن المسار إلى قاعدة البيانات صحيح
+const db = require('./db'); 
 
-// جدولة المهمة لحذف الحجوزات القديمة وتحديث حالة القطع
-const job = new cron.CronJob('0 0 * * *', () => { // تعديل هنا لتنفذ كل دقيقة
+const job = new cron.CronJob('0 0 * * *', () => { 
     console.log("Running scheduled job for updating item statuses and deleting expired bookings...");
 
-    // تحديث حالة القطع لتكون متاحة للحجز مجددًا
     const updateItemStatusQuery = `
         UPDATE items 
         SET status = 'available' 
@@ -24,7 +22,6 @@ const job = new cron.CronJob('0 0 * * *', () => { // تعديل هنا لتنف�
         console.log("Item statuses updated to 'available' for expired bookings:", result.affectedRows);
     });
 
-    // حذف الحجوزات القديمة
     const deleteQuery = `
         DELETE FROM bookings 
         WHERE end_date < NOW()
@@ -39,5 +36,4 @@ const job = new cron.CronJob('0 0 * * *', () => { // تعديل هنا لتنف�
     });
 });
 
-// تشغيل المهمة المجدولة
 job.start();
