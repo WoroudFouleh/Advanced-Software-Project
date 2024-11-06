@@ -1,32 +1,30 @@
 const jwt = require('jsonwebtoken');
 
-// تعريف checkPermissions
+//checkPermissions
 const checkPermissions = (req, res, next) => {
     const token = req.headers['authorization'];
     if (!token) {
-        console.log("No token provided."); // إضافة رسالة تفيد بعدم وجود توكن
+        console.log("No token provided."); 
         return res.status(403).send("Access denied.");
     }
 
-    // إزالة كلمة "Bearer " إذا كانت موجودة
-    const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token; // تأكد من تعريف المتغير هنا
+    const tokenWithoutBearer = token.startsWith('Bearer ') ? token.slice(7) : token; 
 
     jwt.verify(tokenWithoutBearer, '789', (err, user) => {
         if (err) {
-            console.log("Invalid token."); // إضافة رسالة تفيد بأن التوكن غير صحيح
+            console.log("Invalid token."); 
             return res.status(403).send("Invalid token.");
         }
 
-        console.log(user); // إضافة هذا السطر للتحقق من بيانات المستخدم
+        console.log(user); 
         req.user = user;
 
-        console.log("Path:", req.path); // يعرض المسار في وحدة التحكم
-    console.log("User Role:", req.user.role); // يعرض الدور للتحقق منه
+        console.log("Path:", req.path); 
+    console.log("User Role:", req.user.role); 
     
     if (req.path === '/messages/sendReply') {
         return next();
     }
-        // تحقق من صلاحيات المستخدم
         if (user.role === 'admin') {
             if (req.path.startsWith('/messages')) {
                 return res.status(403).send("Admin does not have access to messages.");
@@ -35,7 +33,6 @@ const checkPermissions = (req, res, next) => {
                 next();
             }
         } else if (user.role === 'owner') {
-            // صلاحيات الـ owner
             if (req.method === 'POST' && req.path === '/add_pricing_rule') {
                 next();
             }
@@ -95,7 +92,6 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You do not have permission to perform this action.");
             }
         } else if (user.role === 'user') {
-            // صلاحيات الـ user
             if (req.path.startsWith('/messages/send') && req.method === 'POST') {
                 const { receiverRole } = req.body;
                 if (receiverRole === 'owner' || receiverRole === 'delivery') {
@@ -147,7 +143,6 @@ const checkPermissions = (req, res, next) => {
                 return res.status(403).send("You do not have permission to perform this action.");
             }
         } else if(user.role === 'delivery'){
-             // صلاحيات الـ user
              if (req.path.startsWith('/messages/send') && req.method === 'POST') {
                 const { receiverRole } = req.body;
                 if (receiverRole === 'user' ) {

@@ -1,7 +1,6 @@
 //DiscountController.js
 const discountModel = require('../models/DiscountModel');
 
-// Function to add a new discount
 const addDiscount = (req, res) => {
     const { item_id, discount_type, discount_value } = req.body;
 
@@ -29,7 +28,6 @@ const addDiscount = (req, res) => {
     });
 };
 
-// Function to retrieve discounts associated with a specific item
 const getDiscounts = (req, res) => {
     const { item_id } = req.params;
 
@@ -57,7 +55,6 @@ const getDiscounts = (req, res) => {
     });
 };
 
-// Exporting the functions
 module.exports = {
     addDiscount,
     getDiscounts,

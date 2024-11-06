@@ -34,7 +34,6 @@ exports.updateUser = (req, res) => {
     const userId = req.params.id;
     const { username, password, role, email} = req.body;
 
-    // قم بإنشاء مصفوفة لحفظ القيم التي سيتم تحديثها
     const fields = [];
     const values = [];
 
@@ -44,7 +43,7 @@ exports.updateUser = (req, res) => {
     }
 
     if (password) {
-        const hashedPassword = bcrypt.hashSync(password, 10); // تشفير كلمة المرور إذا تم تعديلها
+        const hashedPassword = bcrypt.hashSync(password, 10); 
         fields.push('password = ?');
         values.push(hashedPassword);
     }
@@ -61,7 +60,7 @@ exports.updateUser = (req, res) => {
     }
 
     const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-    values.push(userId); // أضف الـ userId كآخر قيمة
+    values.push(userId);
 
     User.update(query, values, (error) => {
         if (error) return res.status(500).json({ message: 'Error updating user' });
@@ -73,7 +72,7 @@ exports.updateUser = (req, res) => {
 
 
 exports.searchUser = (req, res) => {
-    const { searchTerm } = req.query; // الاسم أو الدور
+    const { searchTerm } = req.query; 
 
     User.findByRoleOrUsername(searchTerm, (error, results) => {
         if (error) return res.status(500).json({ message: 'Error fetching users' });
@@ -87,7 +86,7 @@ exports.getOwnProfile = (req, res) => {
         return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    const userId = req.user.id; // معرف المستخدم من التوكن
+    const userId = req.user.id; 
 
     User.findById(userId, (error, results) => {
         if (error || results.length === 0) {
@@ -99,31 +98,26 @@ exports.getOwnProfile = (req, res) => {
 
 
 exports.updateOwnProfile = (req, res) => {
-    const userId = req.user.id; // معرف المستخدم من التوكن
-    const { username, password, role } = req.body; // احصل على الحقول من الطلب
+    const userId = req.user.id; 
+    const { username, password, role } = req.body; 
 
-    // إعداد كائن لتخزين التحديثات
     const updates = {};
 
-    // تحقق من وجود username في الطلب وأضفه إلى updates
     if (username) {
         updates.username = username;
     }
     
-    // تحقق من وجود password في الطلب وقم بتشفيره
     if (password) {
         updates.password = bcrypt.hashSync(password, 10);
     }
 
-    // تحقق من وجود role في الطلب وأضفه إلى updates
     if (role) {
-        updates.role = role; // السماح بتحديث الدور
+        updates.role = role; 
     }
 
-    // تحديث المستخدم في قاعدة البيانات
     User.update2(userId, updates, (error) => {
         if (error) {
-            console.error('Error updating user:', error); // طباعة الخطأ في التيرمنال
+            console.error('Error updating user:', error); 
             return res.status(500).json({ message: 'Error updating user' });
         }
         res.json({ message: 'User updated successfully' });
@@ -133,7 +127,7 @@ exports.updateOwnProfile = (req, res) => {
 
 
 exports.deleteOwnAccount = (req, res) => {
-    const userId = req.user.id; // معرف المستخدم من التوكن
+    const userId = req.user.id; 
 
     User.deleteById(userId, (error) => {
         if (error) return res.status(500).json({ message: 'Error deleting user' });
@@ -141,7 +135,6 @@ exports.deleteOwnAccount = (req, res) => {
     });
 };
 
-// controllers/userController.js
 exports.getUserRolePercentages = (req, res) => {
     User.getRoleCounts((error, results) => {
         if (error) {

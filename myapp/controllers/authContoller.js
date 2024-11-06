@@ -2,20 +2,18 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
-const Token = require('../models/tokenModel'); // تأكد من مسار النموذج الصحيح
+const Token = require('../models/tokenModel'); 
 const transporter = require('../config/nodemailerConfig');
 const nodemailer = require('nodemailer');
-const crypto = require('crypto'); // إضافة وحدة crypto هنا
+const crypto = require('crypto'); 
 
-// تسجيل مستخدم جديد
 exports.register = (req, res) => {
-    const { username, password, email, role } = req.body; // إضافة البريد الإلكتروني
+    const { username, password, email, role } = req.body; 
 
-    // تشفير كلمة المرور
     bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) return res.status(500).json({ message: 'Error hashing password' });
 
-        User.create(username, hashedPassword, email, role, (error, result) => { // إضافة البريد الإلكتروني هنا
+        User.create(username, hashedPassword, email, role, (error, result) => { 
             if (error) return res.status(500).json({ message: 'Error creating user' });
             res.status(201).json({ message: 'User registered successfully' });
         });
@@ -31,26 +29,22 @@ exports.login = (req, res) => {
 
         const user = results[0];
 
-        // التحقق من كلمة المرور
         bcrypt.compare(password, user.password, (err, match) => {
             if (err || !match) {
                 return res.status(401).json({ message: 'Invalid username or password' });
             }
 
-            // تعديل الـ token لتضمين username
             const token = jwt.sign(
-                { id: user.id, username: user.username, role: user.role }, // تضمين username هنا
+                { id: user.id, username: user.username, role: user.role }, 
                 '789',
                 { expiresIn: '1h' }
             );
 
-            // تحديث أو إدخال التوكن في قاعدة البيانات
             Token.updateOrInsert(user.username, token, (updateError) => {
                 if (updateError) {
                     return res.status(500).json({ message: 'Error saving token' });
                 }
 
-                // إرجاع الـ token ورسالة الترحيب في الاستجابة
                 res.json({
                     message: 'Welcome to RentItOut platform',
                     token: token
@@ -60,9 +54,9 @@ exports.login = (req, res) => {
     });
 };
 
-// طلب إعادة تعيين كلمة المرور
+
 exports.requestPasswordReset = (req, res) => {
-    const { username } = req.body; // استخدام اسم المستخدم بدلاً من البريد الإلكتروني
+    const { username } = req.body; 
 
     User.findByUsername(username, (error, results) => {
         if (error || results.length === 0) {
@@ -105,26 +99,23 @@ exports.resetPassword = (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired token' });
         }
 
-        const username = tokenResults[0].username; // الحصول على اسم المستخدم
+        const username = tokenResults[0].username; 
 
-        // تشفير كلمة المرور الجديدة
         bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
             if (err) {
-                console.error(err); // طباعة الخطأ في وحدة التحكم
+                console.error(err); 
                 return res.status(500).json({ message: 'Error hashing password' });
             }
 
-            // تأكد من استخدام username هنا
             User.updatePassword(username, hashedPassword, (updateError) => {
                 if (updateError) {
-                    console.error(updateError); // طباعة الخطأ في وحدة التحكم
+                    console.error(updateError); 
                     return res.status(500).json({ message: 'Error updating password' });
                 }
 
-                // حذف الرمز بعد استخدامه
                 Token.deleteByToken(token, (deleteError) => {
                     if (deleteError) {
-                        console.error(deleteError); // طباعة الخطأ في وحدة التحكم
+                        console.error(deleteError); 
                         return res.status(500).json({ message: 'Error deleting reset token' });
                     }
 

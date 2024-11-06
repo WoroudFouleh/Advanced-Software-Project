@@ -9,9 +9,7 @@ const logisticsPermissions = (req, res, next) => {
 
         req.user = user;
 
-        // التحقق من الصلاحيات
         if (user.role === 'admin' || user.role === 'delivery') {
-            // إذا كان المستخدم admin أو delivery، يسمح له بتنفيذ العملية
             next();
         } else {
             return res.status(403).send("You do not have permission to perform this action.");

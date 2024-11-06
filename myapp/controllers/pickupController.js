@@ -2,9 +2,8 @@
 
 const connection = require('../db');
 
-// Get all available pickup locations
 exports.getAllPickupLocations = async (req, res) => {
-    const query = 'SELECT * FROM pickuplocations'; // Use the correct table name
+    const query = 'SELECT * FROM pickuplocations'; 
 
     try {
         const [results] = await connection.query(query);
@@ -14,8 +13,7 @@ exports.getAllPickupLocations = async (req, res) => {
         res.status(500).json({ message: 'Error retrieving pickup locations' });
     }
 };
-// Assign a pickup location to an order
-// controllers/pickupController.js
+
 
 exports.assignPickupLocation = async (req, res) => {
     const { orderId } = req.params;

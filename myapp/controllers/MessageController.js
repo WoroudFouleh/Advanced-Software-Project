@@ -2,8 +2,8 @@
 const Message = require('../models/MessageModel');
 
 exports.sendMessage = (req, res) => {
-    const { receiverUsername, message } = req.body; // تغيير هنا
-    const senderUsername = req.user.username; // استخرج اسم المستخدم من الطلب
+    const { receiverUsername, message } = req.body; 
+    const senderUsername = req.user.username; 
 
     Message.sendMessage(senderUsername, receiverUsername, message, (error) => {
         if (error) return res.status(500).json({ message: 'Error sending message' });
@@ -12,19 +12,18 @@ exports.sendMessage = (req, res) => {
 };
 
 exports.getMessages = (req, res) => {
-    const userUsername1 = req.user.username; // اسم المستخدم للمرسل
-    const userUsername2 = req.params.receiverUsername; // اسم المستخدم للمستلم
+    const userUsername1 = req.user.username; 
+    const userUsername2 = req.params.receiverUsername; 
 
     Message.getMessages(userUsername1, userUsername2, (error, results) => {
         if (error) return res.status(500).json({ message: 'Error fetching messages' });
 
-        // تنقيح النتائج لحذف reply_to_message_id إذا كانت null
         const filteredResults = results.map(message => {
             if (message.reply_to_message_id === null) {
-                const { reply_to_message_id, ...rest } = message; // إزالة reply_to_message_id
-                return rest; // إعادة الكائن بدون reply_to_message_id
+                const { reply_to_message_id, ...rest } = message; 
+                return rest; 
             }
-            return message; // إعادة الكائن كما هو إذا كانت القيمة غير null
+            return message;
         });
 
         res.json(filteredResults);
@@ -32,8 +31,8 @@ exports.getMessages = (req, res) => {
 };
 
 exports.sendReply = (req, res) => {
-    const { receiverUsername, message, replyToMessageId } = req.body; // تغيير هنا
-    const senderUsername = req.user.username; // استخرج اسم المستخدم من الطلب
+    const { receiverUsername, message, replyToMessageId } = req.body; 
+    const senderUsername = req.user.username; 
 
     Message.sendReply(senderUsername, receiverUsername, message, replyToMessageId, (error) => {
         if (error) return res.status(500).json({ message: 'Error sending reply' });

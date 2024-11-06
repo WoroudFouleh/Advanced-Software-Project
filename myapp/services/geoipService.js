@@ -3,9 +3,8 @@ require('dotenv').config();
 
 const getGeoLocation = async (ip) => {
     try {
-        // إذا كان IP هو "::1" أو "127.0.0.1" (localhost)، استخدم IP افتراضي للاختبار
         if (ip === '::1' || ip === '127.0.0.1') {
-            ip = '8.8.8.8'; // يمكنك استخدام أي IP عام للاختبار
+            ip = '8.8.8.8'; 
         }
 
         const response = await axios.get('http://api.positionstack.com/v1/reverse', {

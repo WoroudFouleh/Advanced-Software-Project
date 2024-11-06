@@ -1,7 +1,6 @@
 // statisticsController.js
-const db = require('../db');  // استيراد قاعدة البيانات
+const db = require('../db'); 
 
-// جلب إجمالي الإيرادات وعدد الحجوزات ورسوم المنصة
 const getRevenueStatistics = (req, res) => {
     const query = `
         SELECT 
@@ -14,12 +13,11 @@ const getRevenueStatistics = (req, res) => {
     db.execute(query, (error, results) => {
         if (error) return res.status(500).json({ error: "Database error" });
 
-        res.status(200).json(results[0]);  // إرسال البيانات كـ JSON للواجهة
+        res.status(200).json(results[0]);  
     });
 };
 
 
-// إيرادات يومية مع الحجز ورسوم المنصة
 const getDailyRevenue = (req, res) => {
     const query = `
         SELECT 

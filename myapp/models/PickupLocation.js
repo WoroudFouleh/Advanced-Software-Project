@@ -2,7 +2,6 @@
 
 const connection = require('../db');
 
-// Get all available pickup locations
 exports.getAllPickupLocations = (req, res) => {
     const query = 'SELECT * FROM pickup_locations';
 
@@ -16,7 +15,6 @@ exports.getAllPickupLocations = (req, res) => {
     });
 };
 
-// Assign a pickup location to an order
 exports.assignPickupLocation = (req, res) => {
     const { orderId } = req.params;
     const { location_id } = req.body;
@@ -25,17 +23,14 @@ exports.assignPickupLocation = (req, res) => {
     const findLocationQuery = 'SELECT * FROM pickup_locations WHERE location_id = ?';
     const updateOrderQuery = 'UPDATE orders SET pickup_location_id = ? WHERE order_id = ?';
 
-    // Check if order exists
     connection.query(findOrderQuery, [orderId], (error, orderResults) => {
         if (error || orderResults.length === 0) {
             res.status(404).json({ message: 'Order not found' });
         } else {
-            // Check if pickup location exists
             connection.query(findLocationQuery, [location_id], (error, locationResults) => {
                 if (error || locationResults.length === 0) {
                     res.status(404).json({ message: 'Pickup location not found' });
                 } else {
-                    // Update the order with the selected pickup location
                     connection.query(updateOrderQuery, [location_id, orderId], (error) => {
                         if (error) {
                             console.error('Error assigning pickup location:', error);

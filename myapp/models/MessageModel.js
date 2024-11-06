@@ -1,18 +1,16 @@
 // models/Message.js
-const db = require('../db'); // استيراد قاعدة البيانات
+const db = require('../db'); 
 
 const Message = {
     sendMessage: (senderUsername, receiverUsername, message, callback) => {
         const querySenderId = 'SELECT id FROM users WHERE username = ?';
         const queryReceiverId = 'SELECT id FROM users WHERE username = ?';
 
-        // استعلام للحصول على معرف المرسل
         db.query(querySenderId, [senderUsername], (err, senderResult) => {
             if (err || senderResult.length === 0) return callback(err || new Error('Sender not found'));
 
             const senderId = senderResult[0].id;
 
-            // استعلام للحصول على معرف المستلم
             db.query(queryReceiverId, [receiverUsername], (err, receiverResult) => {
                 if (err || receiverResult.length === 0) return callback(err || new Error('Receiver not found'));
 
@@ -27,7 +25,6 @@ const Message = {
         const queryUserId1 = 'SELECT id FROM users WHERE username = ?';
         const queryUserId2 = 'SELECT id FROM users WHERE username = ?';
     
-        // الحصول على معرفات المستخدمين بناءً على أسماء المستخدمين
         db.query(queryUserId1, [userUsername1], (err, user1Result) => {
             if (err || user1Result.length === 0) return callback(err || new Error('User 1 not found'));
     
@@ -52,13 +49,12 @@ const Message = {
                 db.query(query, [userId1, userId2, userId2, userId1], (err, results) => {
                     if (err) return callback(err);
     
-                    // تنقيح النتائج لحذف reply_to_message_id إذا كانت null
                     const filteredResults = results.map(message => {
                         if (message.reply_to_message_id === null) {
-                            const { reply_to_message_id, ...rest } = message; // إزالة reply_to_message_id
-                            return rest; // إعادة الكائن بدون reply_to_message_id
+                            const { reply_to_message_id, ...rest } = message;
+                            return rest; 
                         }
-                        return message; // إعادة الكائن كما هو إذا كانت القيمة غير null
+                        return message; 
                     });
     
                     callback(null, filteredResults);
@@ -71,13 +67,11 @@ const Message = {
         const querySenderId = 'SELECT id FROM users WHERE username = ?';
         const queryReceiverId = 'SELECT id FROM users WHERE username = ?';
 
-        // استعلام للحصول على معرف المرسل
         db.query(querySenderId, [senderUsername], (err, senderResult) => {
             if (err || senderResult.length === 0) return callback(err || new Error('Sender not found'));
 
             const senderId = senderResult[0].id;
 
-            // استعلام للحصول على معرف المستلم
             db.query(queryReceiverId, [receiverUsername], (err, receiverResult) => {
                 if (err || receiverResult.length === 0) return callback(err || new Error('Receiver not found'));
 

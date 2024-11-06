@@ -2,7 +2,6 @@
 
 const { getNotificationsByUserId, getNotificationById } = require('../models/notificationModel');
 
-// دالة للحصول على جميع الإشعارات للمستخدم
 const getAllNotifications = (req, res) => {
     const userId = req.params.userId;
 
@@ -12,7 +11,6 @@ const getAllNotifications = (req, res) => {
     });
 };
 
-// دالة للحصول على إشعار واحد بناءً على ID
 const getNotificationByIdHandler = (req, res) => {
     const notificationId = req.params.notificationId;
 

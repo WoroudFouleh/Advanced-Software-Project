@@ -2,7 +2,6 @@
 
 const db = require("../db");
 
-// دالة للحصول على الإشعارات بناءً على معرف المستخدم
 const getNotificationsByUserId = (userId, callback) => {
     const query = `
         SELECT * FROM notifications WHERE user_id = ?
@@ -16,7 +15,6 @@ const getNotificationsByUserId = (userId, callback) => {
     });
 };
 
-// دالة للحصول على إشعار واحد بناءً على ID
 const getNotificationById = (notificationId, callback) => {
     const query = `
         SELECT * FROM notifications WHERE id = ?
@@ -26,8 +24,8 @@ const getNotificationById = (notificationId, callback) => {
         if (error) {
             return callback(error);
         }
-        callback(null, result[0]); // نفترض أن النتيجة عبارة عن مصفوفة
+        callback(null, result[0]); 
     });
 };
 
-module.exports = { getNotificationsByUserId, getNotificationById }; // تأكد من تصدير الدوال
+module.exports = { getNotificationsByUserId, getNotificationById }; 

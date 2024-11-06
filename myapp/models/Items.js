@@ -1,15 +1,13 @@
 const mysql = require('mysql2');
 
-const connection = require('../db'); // Ensure the path is correct
+const connection = require('../db'); 
 
 exports.createItem = (itemData, callback) => {
   const { name, category, description, basePricePerDay, basePricePerHour, username, status, imageURL } = itemData;
-  // تحقق من القيم المطلوبة
   if (!name || !category || !description || basePricePerDay === undefined || !username || !status  || !imageURL) {
       return callback(new Error("All fields are required (name, category, description, basePricePerDay, basePricePerHour, status, imageURL )."));
   }
 
-  // تنفيذ الاستعلام
   const query = `
       INSERT INTO items (name, category, description, basePricePerDay, basePricePerHour, username, status, imageURL)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -25,12 +23,10 @@ exports.createItem = (itemData, callback) => {
   );
 };
 
-// دالة لاسترجاع جميع العناصر
 exports.getAllItems = (role, username, callback) => {
   let query = 'SELECT * FROM items';
   const params = [];
 
-  // فقط المالك يرى العناصر الخاصة به
   if (role === 'owner') {
     query += ' WHERE username = ?';
     params.push(username);
@@ -42,12 +38,10 @@ exports.getAllItems = (role, username, callback) => {
   });
 };
 
-// استرجاع عنصر معين باستخدام ID
 exports.getItemById = (id, role, username, callback) => {
   let query = 'SELECT * FROM items WHERE id = ?';
   const params = [id];
 
-  // إذا كان المستخدم "owner"، نضيف شرط المطابقة مع username
   if (role === 'owner') {
     query += ' AND username = ?';
     params.push(username);
@@ -55,19 +49,16 @@ exports.getItemById = (id, role, username, callback) => {
 
   connection.execute(query, params, (error, results) => {
     if (error) return callback(error);
-    callback(null, results[0]); // جلب العنصر الأول
+    callback(null, results[0]); 
   });
 };
 
-// تحديث عنصر
 exports.updateItem = (id, itemData, role, username, callback) => {
-  // جلب البيانات الحالية للعنصر
   exports.getItemById(id, role, username, (error, existingItem) => {
       if (error || !existingItem) {
           return callback(new Error("Item not found"));
       }
 
-      // تحديد القيم النهائية باستخدام البيانات الجديدة أو الحالية
       const name = itemData.name || existingItem.name;
       const category = itemData.category || existingItem.category;
       const description = itemData.description || existingItem.description;
@@ -94,7 +85,6 @@ exports.updateItem = (id, itemData, role, username, callback) => {
 };
 
 
-// حذف عنصر
 exports.deleteItem = (id, callback) => {
   const query = 'DELETE FROM items WHERE id = ?';
 
@@ -104,7 +94,6 @@ exports.deleteItem = (id, callback) => {
   });
 };
 
-// دالة لتصفية العناصر
 exports.filterItems = (filters, callback) => {
   const { name, category, minPrice, maxPrice, status } = filters;
   let query = 'SELECT * FROM items WHERE 1 = 1';

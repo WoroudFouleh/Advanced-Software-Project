@@ -1,7 +1,6 @@
 // insuranceController.js
 const insuranceModel = require('../models/insuranceModel'); // Adjust the path as needed
 
-// Controller to get all insurance records
 const getAllInsurance = async (req, res) => {
     try {
         const insuranceRecords = await insuranceModel.getAllInsurance();
@@ -13,9 +12,8 @@ const getAllInsurance = async (req, res) => {
 };
 
 
-// Controller to delete an insurance record by ID
 const deleteInsuranceById = async (req, res) => {
-    const { id } = req.body; // Getting id from request body
+    const { id } = req.body; 
 
     if (!id) {
         return res.status(400).send("ID is required to delete an insurance record.");
@@ -35,7 +33,7 @@ const deleteInsuranceById = async (req, res) => {
     }
 }; 
 const getInsuranceByUserId = async (req, res) => {
-    const { user_id } = req.params; // Getting user_id from request parameters
+    const { user_id } = req.params; 
 
     if (!user_id) {
         return res.status(400).send("User ID is required to fetch insurance records.");

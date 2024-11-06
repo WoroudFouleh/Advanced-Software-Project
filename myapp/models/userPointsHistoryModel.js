@@ -1,5 +1,5 @@
 // userPointsHistoryModel.js
-const db = require('../db'); // استيراد قاعدة البيانات
+const db = require('../db'); 
 
 const UserPointsHistory = {
     getUserPointsHistory: (userId, callback) => {

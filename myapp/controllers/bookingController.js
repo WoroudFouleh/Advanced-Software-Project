@@ -13,39 +13,35 @@ function getDiscountPercentage(userPoints, callback) {
     db.execute(query, [userPoints], (error, results) => {
         if (error) {
             console.error("Error fetching discount percentage:", error);
-            return callback(0);  // في حال وجود خطأ، لا يتم تطبيق خصم
+            return callback(0);  
         }
 
-        console.log("Discount query results:", results);  // عرض نتائج الاستعلام
+        console.log("Discount query results:", results);  
 
         const discount = results.length > 0 ? results[0].discount_percentage : 0;
-        console.log("Applicable discount:", discount);  // عرض النسبة النهائية
+        console.log("Applicable discount:", discount);  
         callback(discount);
     });
 }
 
 
 
-// دالة لحساب السعر الكلي ورسوم المنصة
 function calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const durationInHours = Math.ceil((end - start) / (1000 * 60 * 60)); // مدة الإيجار بالساعات
-    const durationInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)); // مدة الإيجار بالأيام
+    const durationInHours = Math.ceil((end - start) / (1000 * 60 * 60)); 
+    const durationInDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)); 
 
     let totalPrice = durationInDays > 1 ? durationInDays * basePricePerDay : durationInHours * basePricePerHour;
 
-    // حساب رسوم المنصة (10%)
-    const platformFeePercentage = 0.10; // 10% رسوم
+    const platformFeePercentage = 0.10; 
     const platformFee = totalPrice * platformFeePercentage;
 
-    // حساب الإيرادات الكلية
     const totalRevenue = totalPrice + platformFee;
 
     return { totalPrice, platformFee, totalRevenue, durationInHours };
 }
 
-// دالة لتحديث نقاط المستخدم
 function updateUserPoints(userId, bookingId, durationInHours) {
     const pointsPerHour = 5;
     const earnedPoints = durationInHours * pointsPerHour;
@@ -65,7 +61,6 @@ function updateUserPoints(userId, bookingId, durationInHours) {
             console.log("User points updated successfully.");
         }
 
-        // إضافة سجل في user_points_history
         const insertHistoryQuery = `
             INSERT INTO user_points_history (user_id, booking_id, points_earned)
             VALUES (?, ?, ?)
@@ -76,14 +71,14 @@ function updateUserPoints(userId, bookingId, durationInHours) {
         });
     });
 }
-// دالة لإنشاء حجز مع حساب السعر الكلي ورسوم المنصة وتحديث نقاط المستخدم
+
 const createBooking = (req, res) => {
     const itemId = req.body.item_id || null;
     const userId = req.body.user_id || null;
     const startDate = req.body.start_date || null;
     const endDate = req.body.end_date || null;
 
-    // التحقق مما إذا كان هناك حجز متداخل
+
     const checkQuery = `
         SELECT * FROM bookings 
         WHERE item_id = ? 
@@ -97,7 +92,6 @@ const createBooking = (req, res) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length > 0) return res.status(400).send("Booking already exists for this item in the selected time period.");
 
-        // الحصول على سعر العنصر من قاعدة البيانات
         const query = 'SELECT basePricePerHour, basePricePerDay FROM items WHERE id = ?';
         db.execute(query, [itemId], (error, results) => {
             if (error) return res.status(500).send("Database error.");
@@ -105,10 +99,8 @@ const createBooking = (req, res) => {
 
             const { basePricePerHour, basePricePerDay } = results[0];
 
-            // حساب السعر الكلي، رسوم المنصة، والإيرادات الكلية ومدة الحجز بالساعات
             const { totalPrice, platformFee, totalRevenue, durationInHours } = calculateTotalAndPlatformFee(startDate, endDate, basePricePerHour, basePricePerDay);
 
-            // الحصول على نقاط المستخدم
             const userPointsQuery = 'SELECT reward_points FROM users WHERE id = ?';
             db.execute(userPointsQuery, [userId], (error, userResults) => {
                 if (error) return res.status(500).send("Database error.");
@@ -116,13 +108,10 @@ const createBooking = (req, res) => {
                 const userPoints = userResults[0].reward_points;
                 console.log(userPoints);
 
-                // الحصول على نسبة الخصم بناءً على النقاط
                 getDiscountPercentage(userPoints, (discountPercentage) => {
-                    // تطبيق الخصم على السعر الكلي
                     const discountAmount = totalPrice * (discountPercentage / 100);
                     const discountedTotalPrice = totalPrice - discountAmount;
 
-                    // إدخال الحجز مع الخصم ورسوم المنصة والإيرادات في قاعدة البيانات
                     const insertQuery = `
                         INSERT INTO bookings (item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue, discount_percentage, discount_amount) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -132,7 +121,6 @@ const createBooking = (req, res) => {
 
                         const bookingId = result.insertId;
 
-                        // تحديث نقاط المستخدم بعد إنشاء الحجز
                         updateUserPoints(userId, bookingId, durationInHours);
 
                         res.status(201).json({
@@ -153,20 +141,17 @@ const createBooking = (req, res) => {
 
 
 
-// دالة لاسترجاع جميع حجوزات اليوزر أو المالك
 const getAllBookings = (req, res) => {
-    const username = req.user.username;  // اسم المستخدم
-    const role = req.user.role;  // دور المستخدم (User أو Owner)
+    const username = req.user.username;  
+    const role = req.user.role;  
 
     let query;
     let params;
 
     if (role === 'user') {
-        // جلب الحجوزات التي قام بها المستخدم
         query = 'SELECT * FROM bookings WHERE user_id = ?';
         params = [username];
     } else if (role === 'owner') {
-        // جلب الحجوزات المرتبطة بممتلكات المالك باستخدام username
         query = `
             SELECT b.* FROM bookings b
             JOIN items i ON b.item_id = i.id
@@ -174,7 +159,6 @@ const getAllBookings = (req, res) => {
         `;
         params = [username];
     }  else if (role === 'admin') {
-        // جلب الحجوزات المرتبطة بممتلكات المالك باستخدام username
         query = `
             SELECT * FROM bookings
         `;
@@ -190,17 +174,15 @@ const getAllBookings = (req, res) => {
     });
 };
 
-// دالة لاسترجاع حجز معين (اليوزر أو المالك)
 const getBookingById = (req, res) => {
     const bookingId = req.params.id;
-    const username = req.user.username;  // اسم المستخدم
-    const role = req.user.role;  // دور المستخدم
+    const username = req.user.username;  
+    const role = req.user.role;  
 
     let query;
     let params;
 
     if (role === 'user') {
-        // اليوزر يسترجع حجز يخصه فقط
         query = `
             SELECT id, item_id, user_id, start_date, end_date, total_price, platform_fee, total_revenue 
             FROM bookings 
@@ -208,7 +190,6 @@ const getBookingById = (req, res) => {
         `;
         params = [bookingId, username];
     } else if (role === 'owner') {
-        // المالك يسترجع حجز مرتبط بممتلكاته باستخدام username
         query = `
             SELECT b.id, b.item_id, b.user_id, b.start_date, b.end_date, b.total_price, b.platform_fee, b.total_revenue 
             FROM bookings b
@@ -217,7 +198,6 @@ const getBookingById = (req, res) => {
         `;
         params = [bookingId, username];
     } else if (role === 'admin') {
-        // جلب الحجوزات المرتبطة بممتلكات المالك باستخدام username
         query = `
             SELECT * FROM bookings WHERE id=?
         `;
@@ -231,7 +211,6 @@ const getBookingById = (req, res) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length === 0) return res.status(404).send("Booking not found.");
         
-        // إرسال بيانات الحجز مع رسوم المنصة والإيرادات
         res.status(200).json({
             booking: results[0],
             message: "Booking retrieved successfully."
@@ -239,7 +218,6 @@ const getBookingById = (req, res) => {
     });
 };
 
-// دالة لتحديث حجز (اليوزر أو المالك)
 const updateBooking = (req, res) => {
     const bookingId = req.params.id;
     const username = req.user.username;
@@ -274,7 +252,6 @@ const updateBooking = (req, res) => {
         if (error) return res.status(500).send("Database error.");
         if (results.length === 0) return res.status(404).send("Booking not found or unauthorized.");
 
-        // Check for overlapping bookings
         const checkQuery = `
             SELECT * FROM bookings 
             WHERE item_id = ? 
@@ -285,12 +262,11 @@ const updateBooking = (req, res) => {
             )
         `;
 
-        const itemId = results[0].item_id; // Get the item_id of the booking to check for overlaps
+        const itemId = results[0].item_id; 
         db.execute(checkQuery, [itemId, bookingId, endDate, startDate, startDate, endDate], (error, checkResults) => {
             if (error) return res.status(500).send("Database error.");
             if (checkResults.length > 0) return res.status(400).send("Booking already exists for this item in the selected time period.");
 
-            // Now we can safely update the booking
             const updateQuery = 'UPDATE bookings SET start_date = ?, end_date = ? WHERE id = ?';
             db.execute(updateQuery, [startDate, endDate, bookingId], (error) => {
                 if (error) return res.status(500).send("Error updating booking.");
@@ -301,7 +277,6 @@ const updateBooking = (req, res) => {
 };
 
 
-// دالة لحذف حجز (اليوزر أو المالك)
 const deleteBooking = (req, res) => {
     const bookingId = req.params.id;
     const username = req.user.username;
@@ -311,11 +286,9 @@ const deleteBooking = (req, res) => {
     let params;
 
     if (role === 'user') {
-        // اليوزر يحذف حجوزاته فقط
         query = 'DELETE FROM bookings WHERE id = ? AND user_id = ?';
         params = [bookingId, username];
     } else if (role === 'owner') {
-        // المالك يحذف الحجوزات المرتبطة بممتلكاته باستخدام username
         query = `
             DELETE b FROM bookings b
             JOIN items i ON b.item_id = i.id
@@ -323,7 +296,6 @@ const deleteBooking = (req, res) => {
         `;
         params = [bookingId, username];
     } else if (role === 'admin') {
-        // المالك يحذف الحجوزات المرتبطة بممتلكاته باستخدام username
         query = `
             DELETE FROM bookings WHERE id=?
         `;
@@ -334,7 +306,7 @@ const deleteBooking = (req, res) => {
     }
     db.execute(query, params, (error, results) => {
         if (error) {
-            console.error("Error details:", error); // طباعة تفاصيل الخطأ
+            console.error("Error details:", error); 
             return res.status(500).send("Database error.");
         }
         if (results.affectedRows === 0) return res.status(404).send("Booking not found or unauthorized.");
@@ -344,7 +316,6 @@ const deleteBooking = (req, res) => {
     
 };
 
-// دالة لحساب إحصائيات الحجز
 const getBookingStatistics = (req, res) => {
     const query = `
         SELECT 
@@ -392,7 +363,6 @@ const getBookingStatistics = (req, res) => {
     });
 };
 
-// تصدير الدوال
 module.exports = {
     createBooking,
     getAllBookings,

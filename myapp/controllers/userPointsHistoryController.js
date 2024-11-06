@@ -3,17 +3,16 @@ const db = require("../db");
 
 const UserPointsHistory = require('../models/userPointsHistoryModel');
 
-// جلب تاريخ نقاط المستخدم
 const getAllUserPointsHistory = (req, res) => {
-    const query = 'SELECT * FROM user_points_history'; // تأكد من أنك تقوم باسترجاع جميع السجلات
+    const query = 'SELECT * FROM user_points_history'; 
 
     db.execute(query, (error, results) => {
         if (error) {
-            console.error("Database error:", error); // طباعة أي خطأ يظهر
+            console.error("Database error:", error); 
             return res.status(500).json({ error: "Database error" });
         }
 
-        res.status(200).json(results); // إرسال جميع النتائج كـ JSON
+        res.status(200).json(results); 
     });
 };
 
@@ -21,7 +20,7 @@ const addUserPointsHistory = (req, res) => {
     const newEntry = req.body;
     UserPointsHistory.addUserPointsHistory(newEntry, (error, results) => {
         if (error) {
-            console.error("Database error:", error); // طباعة الخطأ الكامل
+            console.error("Database error:", error); 
             return res.status(500).json({ error: "Database error", details: error });
         }
         res.status(201).json({ message: "Points history added successfully", id: results.insertId });
@@ -29,7 +28,6 @@ const addUserPointsHistory = (req, res) => {
 };
 
 
-// تحديث نقاط المستخدم
 const updateUserPointsHistory = (req, res) => {
     const { id } = req.params;
     const updatedData = req.body;
@@ -41,7 +39,6 @@ const updateUserPointsHistory = (req, res) => {
     });
 };
 
-// حذف نقاط المستخدم
 const deleteUserPointsHistory = (req, res) => {
     const { id } = req.params;
     UserPointsHistory.deleteUserPointsHistory(id, (error, results) => {

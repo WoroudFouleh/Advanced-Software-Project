@@ -1,12 +1,8 @@
 // models/User.js
 const mysql = require('mysql2');
 
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 's120WOROUD#',
-    database: 'worouddb'
-});
+const db = require('../db'); 
+
 
 db.connect(err => {
     if (err) throw err;

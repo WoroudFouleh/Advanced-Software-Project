@@ -1,7 +1,7 @@
 //logisticsController.js
 const Logistics = require('../models/LogisticsTemp');
 const axios = require('axios');
-const connection = require('../db');  // قم بتعديل المسار إذا كان ملف db في مكان مختلف
+const connection = require('../db');  
 require('dotenv').config();
 
 exports.createLogistics = async (req, res) => {
@@ -13,7 +13,6 @@ exports.createLogistics = async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // Fetch item price and parse it as a float
         const bookingQuery = 'SELECT total_price FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1';
         const [bookingResult] = await connection.query(bookingQuery, [userId]);
 
@@ -29,14 +28,13 @@ exports.createLogistics = async (req, res) => {
 
         if (deliveryOption.toLowerCase() === 'delivery') {
             deliveryPrice = calculateDeliveryPrice(pickupLocation, deliveryAddress);
-            finalPrice = itemPrice + deliveryPrice; // Both are numbers now
+            finalPrice = itemPrice + deliveryPrice; 
         }
 
         console.log('Item Price:', itemPrice);
         console.log('Delivery Price:', deliveryPrice);
         console.log('Final Price:', finalPrice);
 
-        // Store logistics record
         const logistics = await Logistics.createLogistics({
             userId,
             pickupLocation,
@@ -57,7 +55,6 @@ exports.createLogistics = async (req, res) => {
 
 
 
-// دالة لحساب المسافة أو السعر باستخدام API للخرائط
 
 const calculateDeliveryPrice = (pickupLocation, deliveryAddress) => {
     try {
@@ -93,7 +90,7 @@ const calculateDeliveryPrice = (pickupLocation, deliveryAddress) => {
 exports.getLogistics = async (req, res) => {
     try {
         const logistics = await Logistics.getLogistics();
-        res.status(200).json({ logistics }); // تأكد من أن logistics تحتوي على deliveryPrice
+        res.status(200).json({ logistics }); 
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics options' });
     }
@@ -106,14 +103,14 @@ exports.getLogisticsById = async (req, res) => {
         if (!logistics) {
             return res.status(404).json({ error: 'Logistics not found' });
         }
-        res.status(200).json({ logistics }); // يتضمن deliveryPrice الآن
+        res.status(200).json({ logistics }); 
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics option' });
     }
 };
 
 
-const { sendNotification } = require('../services/notificationService'); // Import the notification service
+const { sendNotification } = require('../services/notificationService'); 
 
 exports.updateLogistics = async (req, res) => {
     try {
@@ -181,12 +178,12 @@ exports.getNearbyLocations = async (req, res) => {
     try {
         const response = await axios.get('http://api.positionstack.com/v1/reverse', {
             params: {
-                access_key: process.env.POSITIONSTACK_API_KEY, // تغيير المفتاح إلى Positionstack
-                query: `${latitude},${longitude}`, // تمرير الإحداثيات
-                limit: 10 // اختيارياً، تحديد عدد النتائج المراد استرجاعها
+                access_key: process.env.POSITIONSTACK_API_KEY, 
+                query: `${latitude},${longitude}`, 
+                limit: 10 
             }
         });
-        res.status(200).json({ locations: response.data.data }); // تعديل على النتيجة حسب ما يعيده Positionstack
+        res.status(200).json({ locations: response.data.data }); 
     } catch (error) {
         console.error('Error fetching nearby locations:', error);
         res.status(500).json({ error: 'Error fetching nearby locations' });
@@ -195,38 +192,36 @@ exports.getNearbyLocations = async (req, res) => {
 
 exports.getLogisticsByUser = async (req, res) => {
     try {
-        const { userId } = req.params; // جلب userId من الـ params
+        const { userId } = req.params; 
         const logistics = await Logistics.getLogisticsByUser(userId);
         if (logistics.length === 0) {
             return res.status(404).json({ error: 'No logistics found for this user' });
         }
-        res.status(200).json({ logistics }); // تأكد من أن logistics تحتوي على deliveryPrice
+        res.status(200).json({ logistics }); 
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics for the user' });
     }
 };
 
 
-// جلب جميع خيارات اللوجستيات حسب الحالة
 exports.getLogisticsByStatus = async (req, res) => {
     try {
-        const { status } = req.params; // جلب status من الـ params
+        const { status } = req.params; 
         const logistics = await Logistics.getLogisticsByStatus(status);
         if (logistics.length === 0) {
             return res.status(404).json({ error: 'No logistics found with this status' });
         }
-        res.status(200).json({ logistics }); // تأكد من أن logistics تحتوي على deliveryPrice
+        res.status(200).json({ logistics }); 
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while fetching logistics by status' });
     }
 };
 
 
-// Import Stripe
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // Add your Stripe Secret Key to .env
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY); 
 
-const paymentNotification = require('../services/paymentNotification'); // Make sure the path is correct
+const paymentNotification = require('../services/paymentNotification'); 
 
 exports.processPayment = async (req, res) => {
     const { logisticsId, paymentMethod } = req.body;

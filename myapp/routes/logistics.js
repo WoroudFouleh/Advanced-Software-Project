@@ -13,28 +13,20 @@ const {
     processPayment 
 } = require('../controllers/logisticsController');
 
-// Route to create a logistics option (pickup or delivery)
 router.post('/create', logisticsPermissions, createLogistics);
 
-// Route to get nearby logistics options
 router.get('/nearby-locations', getNearbyLocations);
 
-// Route to get logistics by user ID
 router.get('/user/:userId', getLogisticsByUser);
 
-// Route to get logistics by status
 router.get('/status/:status', getLogisticsByStatus);
 
-// Route to get all logistics options
 router.get('/', getLogistics);
 
-// Route to update a logistics option
 router.put('/:id', logisticsPermissions, updateLogistics);
 
-// Route to delete a logistics option
 router.delete('/:id', logisticsPermissions, deleteLogistics);
 
-// Route to get logistics by ID (place this at the end)
 router.get('/:id', getLogisticsById);
 
 router.post('/pay', logisticsPermissions, processPayment);

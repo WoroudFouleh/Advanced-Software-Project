@@ -1,7 +1,7 @@
 //discountLevelController.js
-const db = require('../db');  // Adjust the path as needed
+const db = require('../db');  
 
-const DiscountLevel = require('../models/discountLevelModel');  // Adjust the path as needed
+const DiscountLevel = require('../models/discountLevelModel');  
 
 const getAllDiscountLevels = async (req, res) => {
     try {
@@ -36,7 +36,6 @@ const updateDiscountLevel = (req, res) => {
     const { id } = req.params;
     const { min_points, discount_percentage } = req.body;
 
-    // تأكد من أن القيم المدخلة ليست undefined
     const newMinPoints = (min_points !== undefined) ? min_points : null;
     const newDiscountPercentage = (discount_percentage !== undefined) ? discount_percentage : null;
 
@@ -54,7 +53,6 @@ const updateDiscountLevel = (req, res) => {
     });
 };
 
-// حذف مستوى خصم
 const deleteDiscountLevel = (req, res) => {
     const { id } = req.params;
     const query = `DELETE FROM discount_levels WHERE id = ?`;

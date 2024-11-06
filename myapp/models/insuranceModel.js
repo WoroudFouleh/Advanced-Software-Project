@@ -1,7 +1,6 @@
 // insuranceModel.js
-const db = require('../db'); // Adjust the path as needed to your database connection file
+const db = require('../db'); 
 
-// Get all insurance records
 const getAllInsurance = async () => {
     const query = 'SELECT * FROM insurance';
     const [results] = await db.execute(query);
@@ -12,7 +11,7 @@ const getInsuranceByUserId = async (user_id) => {
     const [rows] = await db.execute(query, [user_id]);
     return rows;
 };
-// Delete insurance record by ID
+
 const deleteInsuranceById = async (id) => {
     const query = 'DELETE FROM insurance WHERE id = ?';
     const [result] = await db.execute(query, [id]);

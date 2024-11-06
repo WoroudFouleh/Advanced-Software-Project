@@ -3,7 +3,6 @@ const router = express.Router();
 const pricingRulesController = require('../controllers/pricingRulesController');
 const checkPermissions = require('../middleware/checkPermissions');
 
-// مسارات قواعد التسعير
 router.post('/add_pricing_rule', checkPermissions,pricingRulesController.createPricingRule);
 router.get('/list_pricing_rules',checkPermissions, pricingRulesController.getAllPricingRules);
 router.get('/getPricingRuleById/:id',checkPermissions,pricingRulesController.getPricingRuleById);

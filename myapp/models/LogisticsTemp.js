@@ -20,15 +20,13 @@ const getLogisticsById = async (id) => {
     const [rows] = await connection.query('SELECT * FROM Logistics WHERE id = ?', [id]);
     return rows[0];
 };
-// Update logistics
 const updateLogistics = async (id, data) => {
     const { pickupLocation, deliveryAddress, deliveryOption, status } = data;
 
-    // Fetch the existing logistics entry to retain the current values
     const logistics = await getLogisticsById(id);
 
     if (!logistics) {
-        throw new Error('Logistics not found'); // Handle this error in your controller
+        throw new Error('Logistics not found'); 
     }
 
     // Only update fields that are provided, keep the current values for missing fields
@@ -47,26 +45,22 @@ const updateLogistics = async (id, data) => {
     ]);
     return result;
 };
-// Delete logistics
 const deleteLogistics = async (id) => {
     const [result] = await connection.query('DELETE FROM Logistics WHERE id = ?', [id]);
     return result;
 };
 
-// جلب جميع خيارات اللوجستيات الخاصة بمستخدم معين
 const getLogisticsByUser = async (userId) => {
     const query = 'SELECT * FROM Logistics WHERE userId = ?';
     const [rows] = await connection.query(query, [userId]);
     return rows;
 };
 
-// جلب جميع خيارات اللوجستيات حسب الحالة
 const getLogisticsByStatus = async (status) => {
     const query = 'SELECT * FROM Logistics WHERE status = ?';
     const [rows] = await connection.query(query, [status]);
     return rows;
 };
 
-// Export all the methods
 module.exports = { createLogistics, getLogistics, getLogisticsById, updateLogistics, deleteLogistics, getLogisticsByUser,
     getLogisticsByStatus  };

@@ -2,7 +2,6 @@ const router = require("express").Router();
 const checkPermissions = require('../middleware/checkPermissions');
 const RatingController = require("../controllers/RatingController");
 
-// POST route for creating a review
 router.post("/Review", checkPermissions, RatingController.createRating);
 router.delete("/deletereview",checkPermissions, RatingController.deleteRating);
 router.delete("/admindeleteReview",checkPermissions, RatingController.admindeleteRating);

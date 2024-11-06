@@ -3,29 +3,25 @@ const itemModel = require('../models/Items');
 const db = require('../db');
 
 
-
-// دالة إنشاء عنصر
 exports.createItem = (req, res) => {
   const itemData = req.body;
-  const username = req.user.username; // الحصول على username من التوكن بعد التعديل
+  const username = req.user.username; 
 
-  // إضافة username إلى البيانات قبل الإرسال إلى الموديل
   itemData.username = username;
   console.log("Item Data:", itemData);
 
   itemModel.createItem(itemData, (error, result) => {
       if (error) {
-          console.error("Error details:", error.message);  // عرض تفاصيل الخطأ
+          console.error("Error details:", error.message); 
           return res.status(500).json({ error: 'Error creating item', details: error.message });
       }
       res.status(201).json({ message: 'Item created successfully', result });
   });
 };
 
-// دالة استرجاع جميع العناصر
 exports.getAllItems = async (req, res) => {
-  const userRole = req.user.role; // افتراض أن role موجود في التوكن
-  const username = req.user.username; // افتراض أن اسم المستخدم موجود في التوكن
+  const userRole = req.user.role; 
+  const username = req.user.username; 
   
     
     itemModel.getAllItems(userRole, username, (error, items) => {
@@ -38,7 +34,6 @@ exports.getAllItems = async (req, res) => {
 };
 
 
-// دالة استرجاع عنصر معين باستخدام ID
 exports.getItemById = (req, res) => {
   const itemId = req.params.id;
   const userRole = req.user.role;
@@ -68,11 +63,9 @@ exports.updateItem = (req, res) => {
   });
 };
 
-// حذف عنصر
 exports.deleteItem = (req, res) => {
     const itemId = req.params.id;
 
-    // أولاً، استرجع العنصر للتحقق من ملكيته
     itemModel.getItemById(itemId, req.user.role, req.user.username, (error, item) => {
       if (error || !item) {
         return res.status(404).json({ error: 'Item not found' });
@@ -81,7 +74,6 @@ exports.deleteItem = (req, res) => {
         return res.status(403).json({ error: 'You do not have permission to delete this item.' });
       }
     
-      // Proceed to delete if the owner is correct
       itemModel.deleteItem(itemId, (error, result) => {
         if (error) {
           return res.status(500).json({ error: 'Error deleting item' });
@@ -91,7 +83,6 @@ exports.deleteItem = (req, res) => {
     });
 };
 
-// دالة لتصفية العناصر
 exports.filterItems = (req, res) => {
   const filters = req.query;
 
