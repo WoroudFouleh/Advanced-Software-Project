@@ -5,7 +5,12 @@ require('dotenv').config();
 
 exports.createLogistics = async (req, res) => {
     try {
-        const userId = req.user.id;
+        // Allow admins to create logistics on behalf of another user if `userId` is provided in the request body
+        let userId = req.user.id;
+        if (req.user.role === 'admin' && req.body.userId) {
+            userId = req.body.userId;
+        }
+
         const { pickupLocation, deliveryAddress, deliveryOption } = req.body;
 
         if (!userId || !pickupLocation || !deliveryAddress || !deliveryOption) {
@@ -51,10 +56,6 @@ exports.createLogistics = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while creating logistics option' });
     }
 };
-
-
-
-
 
 // دالة لحساب المسافة أو السعر باستخدام API للخرائط
 
