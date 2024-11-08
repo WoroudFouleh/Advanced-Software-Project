@@ -221,10 +221,10 @@ exports.getLogisticsByStatus = async (req, res) => {
     }
 };
 
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // Add your Stripe Secret Key to .env
 
 // Import Stripe
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // Add your Stripe Secret Key to .env
 
 const paymentNotification = require('../services/paymentNotification'); // Make sure the path is correct
 
