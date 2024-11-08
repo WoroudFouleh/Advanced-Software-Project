@@ -143,13 +143,14 @@ const createBooking = async (req, res) => {
         // Update user points
         await updateUserPoints(userId, bookingId, durationInHours);
 
-        const [insuranceResults] = await db.execute('SELECT idnumber FROM insurance WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]);
+        const idnumberToUse = idnumber || (
+            (await db.execute('SELECT idnumber FROM insurance WHERE user_id = ? ORDER BY id DESC LIMIT 1', [userId]))[0]?.[0]?.idnumber || null
+        );
+        
+      
+        const insuranceInsertQuery = `INSERT INTO insurance (user_id, idnumber, bookingid) VALUES (?, ?, ?)`;
+        await db.execute(insuranceInsertQuery, [userId, idnumberToUse, bookingId]);
 
-const idnumberToUse = insuranceResults.length > 0 ? insuranceResults[0].idnumber : idnumber; 
-
-
-const insuranceInsertQuery = `INSERT INTO insurance (user_id, idnumber, bookingid) VALUES (?, ?, ?)`;
-await db.execute(insuranceInsertQuery, [userId, idnumberToUse, bookingId]);
 
      
         const userCategoryOrderQuery = `

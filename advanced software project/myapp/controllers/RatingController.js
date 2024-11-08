@@ -24,7 +24,7 @@ module.exports = {
         }
 
         try {
-            // Check if the item exists
+           
             const [itemResults] = await connection.execute(
                 `SELECT * FROM items WHERE id = ?`, [itemId]
             );
@@ -32,7 +32,6 @@ module.exports = {
                 return res.status(404).json({ message: 'Item not found.' });
             }
 
-            // Insert new review
             await connection.execute(
                 `INSERT INTO reviews (username, itemId, rating, comment) VALUES (?, ?, ?, ?)`,
                 [username, itemId, rating, comment]
@@ -40,31 +39,25 @@ module.exports = {
 
             res.status(201).json({ status: true, message: "Rating created successfully" });
 
-            // Send email if the rating is low
             if (rating < 3) {
                 const itemOwnerUsername = itemResults[0].username;
-
-                const [ownerEmailResults] = await connection.execute(
-                    `SELECT email FROM users WHERE username = ?`, [itemOwnerUsername]
-                );
-
-                if (ownerEmailResults.length > 0) {
-                    const ownerEmail = ownerEmailResults[0].email;
+            
+                if (itemOwnerUsername) {
                     const mailOptions = {
                         from: 'Admin',
-                        to: ownerEmail,
+                        to: itemOwnerUsername, // Using the username as the email
                         subject: 'New Low Rating Alert',
                         text: `The item "${itemResults[0].name}" received a low rating of ${rating}. Comment: "${comment}". Enhance your item.`,
                     };
-
+                    
                     try {
                         await transporter.sendMail(mailOptions);
                     } catch (err) {
                         console.error('Error sending email:', err);
-                        return res.status(500).json({ message: 'Error sending email.', error: err.message });
                     }
                 }
             }
+            
         } catch (error) {
             console.error('Caught error:', error);
             res.status(500).json({ status: false, message: error.message });
