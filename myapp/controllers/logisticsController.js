@@ -224,9 +224,9 @@ exports.getLogisticsByStatus = async (req, res) => {
 
 // Import Stripe
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // Add your Stripe Secret Key to .env
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY); // تأكد من إضافة مفتاح STRIPE_SECRET_KEY إلى .env
 
-const paymentNotification = require('../services/paymentNotification'); // Make sure the path is correct
+const paymentNotification = require('../services/paymentNotification'); // تأكد من صحة المسار
 
 exports.processPayment = async (req, res) => {
     const { logisticsId, paymentMethod } = req.body;
@@ -238,13 +238,24 @@ exports.processPayment = async (req, res) => {
         }
 
         if (paymentMethod === 'visa') {
-            const paymentAmount = logistics.finalPrice;
-            const message = `Thank you for your payment of $${paymentAmount} for your logistics service.`;
+            const paymentAmount = logistics.finalPrice * 100; // تحويل المبلغ إلى سنتات، لأن Stripe يقبل المبالغ بالسنتات
 
-            // Call paymentNotification here
+            // إجراء عملية الدفع عبر Stripe
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: paymentAmount,
+                currency: 'usd', // عدل العملة حسب الحاجة
+                payment_method_types: ['card']
+            });
+
+            const message = `Thank you for your payment of $${paymentAmount / 100} for your logistics service.`;
+
+            // استدعاء دالة إشعار الدفع هنا
             await paymentNotification(logistics.userId, message);
 
-            res.status(200).json({ message: 'Payment successful and notification email sent.' });
+            res.status(200).json({
+                message: 'Payment successful and notification email sent.',
+                clientSecret: paymentIntent.client_secret // ارجع client_secret لاستخدامه في واجهة العميل
+            });
         } else if (paymentMethod === 'cash') {
             res.status(200).json({ message: 'Cash payment selected. No email notification sent.' });
         } else {
@@ -255,10 +266,3 @@ exports.processPayment = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while processing payment.' });
     }
 };
-
-
-
-
-
-
-
