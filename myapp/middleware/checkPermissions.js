@@ -29,6 +29,9 @@ const checkPermissions = (req, res, next) => {
             if (req.path.startsWith('/messages')) {
                 return res.status(403).send("Admin does not have access to messages.");
             }
+            else if (req.method === 'DELETE' && req.path.startsWith('/deleteitems/')) {
+                next();
+            }
             else{
                 next();
             }

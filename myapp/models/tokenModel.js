@@ -1,7 +1,11 @@
 const mysql = require('mysql2');
 
-const db = require('../db'); 
-
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 's120WOROUD#',
+    database: 'worouddb'
+});
 
 exports.updateOrInsert = (username, token, callback) => {
     const query = `

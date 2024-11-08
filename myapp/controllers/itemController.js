@@ -70,10 +70,11 @@ exports.deleteItem = (req, res) => {
       if (error || !item) {
         return res.status(404).json({ error: 'Item not found' });
       }
+      if(req.user.role !== "admin"){
       if (item.username !== req.user.username) {
         return res.status(403).json({ error: 'You do not have permission to delete this item.' });
       }
-    
+      }
       itemModel.deleteItem(itemId, (error, result) => {
         if (error) {
           return res.status(500).json({ error: 'Error deleting item' });

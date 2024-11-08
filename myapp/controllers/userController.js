@@ -13,10 +13,14 @@ exports.deleteUser = (req, res) => {
     const userId = req.params.id;
 
     User.deleteById(userId, (error) => {
-        if (error) return res.status(500).json({ message: 'Error deleting user' });
+        if (error) {
+            console.error("Error deleting user:", error);
+            return res.status(500).json({ message: 'Error deleting user' });
+        }
         res.json({ message: 'User deleted successfully' });
     });
 };
+
 exports.addUser = (req, res) => {
     const { username, password, email, role } = req.body;
 

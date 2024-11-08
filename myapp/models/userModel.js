@@ -38,13 +38,18 @@ const User = {
             SET 
                 username = COALESCE(?, username), 
                 password = COALESCE(?, password), 
-                email = COALESCE(?, email), 
-
+                email = COALESCE(?, email),
                 role = COALESCE(?, role) 
-            WHERE id = ?
+            WHERE id = ?;
         `;
-    
-        const values = [updates.username || null, updates.password || null,updates.email || null,  updates.role || null, userId];
+        
+        const values = [
+            updates.username || null, 
+            updates.password || null, 
+            updates.email || null,  
+            updates.role || null, 
+            userId // this should be the actual user ID, not the query string
+        ];
     
         db.query(query, values, (error, results) => {
             if (error) {
@@ -54,6 +59,7 @@ const User = {
             callback(null, results);
         });
     },
+    
 
     findByEmail: (email, callback) => {
         const query = 'SELECT * FROM users WHERE email = ?';

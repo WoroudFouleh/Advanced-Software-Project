@@ -13,7 +13,6 @@ const statisticsRoutes = require('./routes/statisticsRoutes');
 const discountLevelRoutes = require('./routes/discountLevelRoutes');  
 const userPointsHistoryRoutes = require('./routes/userPointsHistoryRoutes');
 const messageRoutes = require('./routes/MessageRoutes');
-const rentalPeriodRoutes= require('./routes/rentalRoutes')
 const pricingRulesRoute = require('./routes/pricingRulesRoute');
 const notificationsRoutes = require('./routes/notificationsRoutes');
 const discountRoutes = require('./routes/discountRoutes');
@@ -47,7 +46,6 @@ app.use('/api', insuranceRoutes);
 app.use('/api/users', RatingRoute);
 app.use('/api/logistics', logisticsRoutes);
 app.use('/api', cartRoutes); 
-app.use('/api/rentalPeriods', rentalPeriodRoutes);
 app.use('/api/season', seasonRoutes);
 app.use('/api', discountRoutes);
 app.use('/api', pricingRulesRoute)
