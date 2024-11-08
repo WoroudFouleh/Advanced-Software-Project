@@ -20,19 +20,30 @@ exports.createItem = (req, res) => {
 };
 
 exports.getAllItems = async (req, res) => {
-  const userRole = req.user.role; 
-  const username = req.user.username; 
-  
-    
-    itemModel.getAllItems(userRole, username, (error, items) => {
-      if (error) {
-        return res.status(500).json({ error: 'Error retrieving items' });
-      }
-      res.status(200).json(items);
-    });
-  
-};
+  try {
+    const userId = req.user.id; // Assuming req.user is populated by your authentication middleware
 
+    // Check if userId is valid
+    if (!userId) {
+      return res.status(401).json({ error: 'User ID not found in token' });
+    }
+
+    const query = `
+      SELECT items.*, COALESCE(user_category_orders.order_count, 0) AS order_count
+      FROM items
+      LEFT JOIN user_category_orders 
+      ON items.category = user_category_orders.category AND user_category_orders.user_id = ?
+      ORDER BY order_count DESC
+    `;
+
+    const [items] = await db.execute(query, [userId]);
+
+    res.status(200).json(items);
+  } catch (error) {
+    console.error("Error retrieving items:", error); // Log the error details
+    res.status(500).json({ error: 'Error retrieving items', details: error.message });
+  }
+};
 
 exports.getItemById = (req, res) => {
   const itemId = req.params.id;
