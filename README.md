@@ -131,4 +131,8 @@ RentItOut is a peer-to-peer rental platform backend that enables users to rent i
 
 ---
 
-## Setup and Running
+## Setup and Running 
+1. **Clone the repository:**  
+   ```bash
+   git clone https://github.com/your-username/rentitout-backend.git
+   cd rentitout-backend
